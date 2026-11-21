@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "sourceRepository": "https://github.com/Batestinha/wabp-plugin-moderation",
+  "sdk": {
+    "version": "0.3.36",
+    "path": "vendor/wabs-plugin-sdk-0.3.36-c10eb6436762.tgz",
+    "sha256": "c10eb64367627b9757ce693c10b5e31a3a2476d3044b29db1d5f2b6e8997cfe2",
+    "sourceRepository": "https://github.com/Batestinha/wabp",
+    "sourceDirectory": "packages/plugin-sdk",
+    "sourceCommit": "2e06f79b"
+  },
+  "portedFrom": {
+    "repository": "https://github.com/Batestinha/wabp",
+    "commit": "18685299^",
+    "directory": "src/plugins/official/moderation-basic",
+    "note": "Rule engine and action planning were rewritten for identity ids, SQLite state and host member standings."
+  }
+}
