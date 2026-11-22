@@ -11,8 +11,8 @@ export const moderationMessages: MessageCatalog = {
   [`${ns}.help.moderate.instruction`]: 'Use /mod suspend @member 7d reason, /mod expel @member reason, /mod lift @member, /mod extend @member 3d, /mod warn @member reason and /mod cases. Suspended and expelled members are removed from every group here; a suspension ends on its own and they are added back.',
   [`${ns}.help.moderate.example`]: '/mod suspend @Ana 7d repeated insults',
   [`${ns}.help.report.title`]: 'Report a message',
-  [`${ns}.help.report.summary`]: 'Tell the admins privately about a message.',
-  [`${ns}.help.report.instruction`]: 'Reply to the message with /report and, if you like, a short reason. Only the admins see it.',
+  [`${ns}.help.report.summary`]: 'Tell the moderators privately about a message.',
+  [`${ns}.help.report.instruction`]: 'Reply to the message with /report and, if you like, a short reason. Only the moderators see it.',
   [`${ns}.help.report.example`]: '/report spam link',
   [`${ns}.help.cmd.status`]: 'Show the moderation settings and open cases.',
   [`${ns}.help.cmd.suspend`]: 'Suspend a member for a number of days.',
@@ -27,7 +27,7 @@ export const moderationMessages: MessageCatalog = {
   [`${ns}.help.cmd.unlock`]: 'Let everyone send messages again.',
   [`${ns}.help.cmd.test`]: 'Check which rules a text would trigger.',
   [`${ns}.help.cmd.resolve`]: 'Act on a member report.',
-  [`${ns}.help.cmd.report`]: 'Report a message to the admins.',
+  [`${ns}.help.cmd.report`]: 'Report a message to the moderators.',
 
   [`${ns}.disabled`]: 'Moderation is not switched on here.',
   [`${ns}.unavailable`]: 'Moderation storage is not available right now. Try again in a moment.',
@@ -71,11 +71,13 @@ export const moderationMessages: MessageCatalog = {
   [`${ns}.authority.parent`]: 'admins of the community',
   [`${ns}.authority.group`]: 'admins of each group',
   [`${ns}.authority.configured`]: 'admins of {count} configured group(s)',
+  [`${ns}.authority.moderators`]: 'people allowed to moderate ({count})',
+  [`${ns}.authority.moderatorsAndAdmins`]: 'people allowed to moderate who are also {admins} ({count})',
 
   [`${ns}.notice.suspended`]: 'You have been suspended from the groups of {scope} until {until}. Reason: {reason}. You will be added back automatically when it ends.',
   [`${ns}.notice.expelled`]: 'You have been removed from the groups of {scope}. Reason: {reason}.',
   [`${ns}.notice.restored`]: 'Your suspension from {scope} has ended. I am adding you back to the groups now; if WhatsApp asks, accept the invitation.',
-  [`${ns}.notice.warned`]: '{member}, this is a warning from the admins: {reason}',
+  [`${ns}.notice.warned`]: '{member}, this is a warning from the moderators: {reason}',
 
   [`${ns}.alert.rejoin`]: '{member} has an active {kind} and tried to rejoin {group}; I removed them again.{dry}',
   [`${ns}.alert.autoExpel`]: 'I expelled {member} for spam right after joining ({rule}) in {group}.{dry} Use /mod lift @member if this was a mistake.',
@@ -84,7 +86,7 @@ export const moderationMessages: MessageCatalog = {
   [`${ns}.alert.report`]: 'Report #{id} in {group} by {reporter}: message by {author}: “{excerpt}”{reason}\nReply here with /mod resolve {id} delete, warn, suspend, expel or dismiss.',
   [`${ns}.alert.reportReason`]: ' Reason: {reason}',
 
-  [`${ns}.report.thanks`]: 'Thanks, the admins have been told privately.',
+  [`${ns}.report.thanks`]: 'Thanks, the moderators have been told privately.',
   [`${ns}.report.duplicate`]: 'You already reported this message.',
   [`${ns}.report.needsReply`]: 'Reply to the message you want to report with /report.',
   [`${ns}.report.disabled`]: 'Reports are not switched on here.',

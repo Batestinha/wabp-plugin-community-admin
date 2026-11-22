@@ -7,9 +7,10 @@ const ana = person('Ana', '351910000001');
 const rui = person('Rui', '351910000002');
 const eva = person('Eva', '351910000003');
 
-function community(config) {
+function community(config, holders) {
   const h = host({
     config,
+    holders,
     groups: [
       { groupWid: 'parent@g.us', name: 'Climbers', members: [[ana, true], [rui], [eva]] },
       { groupWid: 'main@g.us', name: 'Main', parent: 'parent@g.us', members: [[ana, true], [rui], [eva, true]] },
@@ -56,22 +57,72 @@ test('dry run only records the decision', async () => {
   assert.match(result.text, /dry run/u);
 });
 
-test('only admins of the community group may moderate the whole community', async () => {
-  const h = community();
+test('with "Also require WhatsApp admin", only admins of the community group moderate the whole community', async () => {
+  const h = community({ requireGroupAdmin: true });
   // Eva is an admin of the main and event groups, but not of the community group itself.
   const refused = await run(h, eva, '/mod expel spam', { groupWid: 'event@g.us', mentions: [rui] });
   assert.match(refused.text, /Only the admins of parent@g\.us/u);
   assert.equal(refused.pluginActions, undefined);
 });
 
-test('a standalone group needs no community: its own admins moderate it', async () => {
-  const h = host({ groups: [{ groupWid: 'solo@g.us', name: 'Solo', members: [[eva, true], [rui]] }] });
+test('with "Also require WhatsApp admin", a standalone group needs no community: its own admins moderate it', async () => {
+  const h = host({ config: { requireGroupAdmin: true }, groups: [{ groupWid: 'solo@g.us', name: 'Solo', members: [[eva, true], [rui]] }] });
   plugin.registerCommands(h.context);
   const result = await run(h, eva, '/mod suspend 1d off-topic', { groupWid: 'solo@g.us', mentions: [rui] });
   assert.match(result.text, /Removed from 1 group\(s\)/u);
   assert.ok(result.pluginActions.some(action => action.type === 'group.removeParticipant' && action.groupWid === 'solo@g.us'));
   const refused = await run(h, rui, '/mod suspend 1d revenge', { groupWid: 'solo@g.us', mentions: [eva] });
   assert.match(refused.text, /Only the admins of solo@g\.us/u);
+});
+
+test('by default anyone the host lets run /mod moderates; nobody needs to be a WhatsApp admin', async () => {
+  // Only the bot is an admin here, as in communities where people never get WhatsApp admin rights.
+  const h = host({ holders: [eva], groups: [{ groupWid: 'solo@g.us', name: 'Solo', members: [[eva], [rui]] }] });
+  plugin.registerCommands(h.context);
+  const result = await run(h, eva, '/mod suspend 1d off-topic', { groupWid: 'solo@g.us', mentions: [rui] });
+  assert.match(result.text, /Removed from 1 group\(s\)/u);
+  const status = await run(h, eva, '/mod status', { groupWid: 'solo@g.us' });
+  assert.match(status.text, /Authority: people allowed to moderate \(1\)\./u);
+});
+
+test('reports and alerts reach the moderators the host lists, never the bot, whoever the WhatsApp admins are', async () => {
+  const h = community({}, [eva]);
+  const reply = { messageId: 'bad-2', snapshot: { authorWid: rui.canonicalWid, type: 'chat', body: 'buy followers now', hasMedia: false } };
+  const report = await run(h, rui, '/report spam', { groupWid: 'main@g.us', replyTo: reply });
+  const alerts = report.pluginActions.filter(action => action.type === 'message.sendText' && action.chatId !== rui.deliveryChatId);
+  assert.deepEqual(alerts.map(action => action.chatId), [eva.deliveryChatId]);
+  assert.ok(!alerts.some(action => action.chatId === h.bot.deliveryChatId));
+});
+
+test('with "Also require WhatsApp admin", only moderators who are also admins of the authority group act and get alerts', async () => {
+  const h = community({ requireGroupAdmin: true }, [ana, eva]);
+  const refused = await run(h, eva, '/mod expel spam', { groupWid: 'event@g.us', mentions: [rui] });
+  assert.match(refused.text, /Only the admins of parent@g\.us/u);
+  const reply = { messageId: 'bad-3', snapshot: { authorWid: rui.canonicalWid, type: 'chat', body: 'spam', hasMedia: false } };
+  const report = await run(h, rui, '/report', { groupWid: 'main@g.us', replyTo: reply });
+  const alerts = report.pluginActions.filter(action => action.type === 'message.sendText' && action.chatId !== rui.deliveryChatId);
+  assert.deepEqual(alerts.map(action => action.chatId), [ana.deliveryChatId]);
+  const status = await run(h, ana, '/mod status', { groupWid: 'main@g.us' });
+  assert.match(status.text, /people allowed to moderate who are also admins of the community \(2\)/u);
+});
+
+test('when the host cannot list moderators, alerts fall back to the WhatsApp admins of the authority group', async () => {
+  const h = community({}, 'throws');
+  const reply = { messageId: 'bad-4', snapshot: { authorWid: rui.canonicalWid, type: 'chat', body: 'spam', hasMedia: false } };
+  const report = await run(h, eva, '/report', { groupWid: 'main@g.us', replyTo: reply });
+  const alerts = report.pluginActions.filter(action => action.type === 'message.sendText' && action.chatId !== eva.deliveryChatId);
+  assert.deepEqual(alerts.map(action => action.chatId), [ana.deliveryChatId]);
+});
+
+test('moderators are never caught by automatic rules, like admins', async () => {
+  const h = community({ shield: { inviteLinkPolicy: 'delete' } }, [rui]);
+  const hooks = plugin.registerHooks(h.context);
+  const result = await hooks.onMessage({
+    pluginId: 'official.moderation', scopeId: 'scope-1', groupWid: 'main@g.us', managementMode: 'MANAGE', receivedAt: new Date(),
+    message: { id: 'm-mod', chatId: 'main@g.us', body: 'https://chat.whatsapp.com/AbCdEfGhIjKl', type: 'chat', hasMedia: false, links: [], mentions: [], fromMe: false, timestamp: new Date() },
+    actor: { wid: rui.canonicalWid, identityAddress: rui, fromMe: false }, actorIdentityId: rui.identityId, actorWid: rui.canonicalWid, isCommandLike: false, mentionsBot: false
+  });
+  assert.equal(result, undefined);
 });
 
 test('the bot and its owners are never moderated', async () => {

@@ -6,6 +6,7 @@ import type { ModerationConfig, RulePolicy } from './config';
 import { LOCK_EXPIRE_JOB, MODERATION_NAMESPACE as ns, MODERATION_PLUGIN_ID, SUSPENSION_END_JOB } from './constants';
 import {
   adminRecipients,
+  moderatorIdentityIds,
   alertActions,
   configFor,
   database,
@@ -69,7 +70,8 @@ export async function handleMessage(context: HookContext, event: PluginMessageEv
   if (violations.length === 0) return;
 
   const member = await memberByWid(context, event.actorWid) ?? await memberById(context, event.actorIdentityId);
-  if (!member || await isProtected(context, member) || await isGroupAdmin(context, event.groupWid, member)) return;
+  if (!member || await isProtected(context, member) || await isGroupAdmin(context, event.groupWid, member)
+    || await isModerator(context, event.scopeId, member)) return;
 
   const t = await translator(context, event.scopeId);
   const mode = event.managementMode ?? 'OBSERVE';
@@ -95,7 +97,7 @@ export async function handleMessage(context: HookContext, event: PluginMessageEv
         kind: 'expulsion', reason: t(`${ns}.rule.${violation.source}`), automatic: true, t
       });
       actions.push(...plan.actions);
-      actions.push(...alertActions(await adminRecipients(context, config, event.groupWid), t(`${ns}.alert.autoExpel`, {
+      actions.push(...alertActions(await adminRecipients(context, config, event.scopeId, event.groupWid), t(`${ns}.alert.autoExpel`, {
         member: member.label, rule: t(`${ns}.rule.${violation.source}`), group: event.groupWid, dry: ''
       })));
       continue;
@@ -113,7 +115,7 @@ export async function handleMessage(context: HookContext, event: PluginMessageEv
         reason: t(`${ns}.rule.${violation.source}`), now, ttlDays: config.warnings.ttlDays
       });
       if (count === config.warnings.alertAt) {
-        actions.push(...alertActions(await adminRecipients(context, config, event.groupWid),
+        actions.push(...alertActions(await adminRecipients(context, config, event.scopeId, event.groupWid),
           t(`${ns}.alert.warningLimit`, { member: member.label, count })));
       }
     }
@@ -154,6 +156,11 @@ async function counterViolations(context: HookContext, config: ModerationConfig,
     if (count > burst.maxStickers) found.push({ source: 'sticker-burst', detail: `${count}/${burst.windowSeconds}s`, policy: burst.policy });
   }
   return found;
+}
+
+/** Moderators an operator chose are trusted like group admins: automatic rules never act on them. */
+async function isModerator(context: HookContext, scopeId: string, member: Member): Promise<boolean> {
+  return Boolean((await moderatorIdentityIds(context, scopeId))?.has(member.identityId));
 }
 
 async function isGroupAdmin(context: HookContext, groupWid: string, member: Member): Promise<boolean> {
@@ -202,7 +209,7 @@ export async function handleParticipantChange(context: HookContext, event: Plugi
     actions.push(request
       ? { type: 'group.rejectMembershipRequest', groupWid: event.groupWid, userWid: identity.canonicalWid, reason: `${MODERATION_PLUGIN_ID}:${held.kind}` }
       : { type: 'group.removeParticipant', groupWid: event.groupWid, userWid: identity.canonicalWid, reason: `${MODERATION_PLUGIN_ID}:${held.kind}` });
-    actions.push(...alertActions(await adminRecipients(context, config, event.groupWid), t(`${ns}.alert.rejoin`, {
+    actions.push(...alertActions(await adminRecipients(context, config, event.scopeId, event.groupWid), t(`${ns}.alert.rejoin`, {
       member: identity.displayName?.trim() || `@${identity.mentionWid.split('@')[0]}`,
       kind: t(`${ns}.kind.${held.kind}`),
       group: event.groupDisplayName?.trim() || event.groupWid,
@@ -242,7 +249,7 @@ async function raidActions(
     type: 'plugin.enqueueJob', pluginId: MODERATION_PLUGIN_ID, jobName: LOCK_EXPIRE_JOB, scopeId: event.scopeId, runAt: until,
     payload: { groupWid: event.groupWid }, dedupeKey: `${LOCK_EXPIRE_JOB}:${event.groupWid}:${until.toISOString()}`
   });
-  actions.push(...alertActions(await adminRecipients(context, config, event.groupWid), t(`${ns}.alert.raid`, {
+  actions.push(...alertActions(await adminRecipients(context, config, event.scopeId, event.groupWid), t(`${ns}.alert.raid`, {
     count, group: event.groupDisplayName?.trim() || event.groupWid!, seconds: raid.windowSeconds, minutes: raid.lockMinutes, dry: ''
   })));
   return actions;

@@ -45,7 +45,7 @@ function person(name, number) {
  * A fake host. `groups` are the scope's covered groups ({ groupWid, name, mode, parent?, members: [[person, admin?]] }).
  * Works for a community (groups with a parent) and for standalone groups (no parent).
  */
-function host({ groups, config = {}, now = new Date('2026-11-21T12:00:00Z') }) {
+function host({ groups, config = {}, holders, now = new Date('2026-11-21T12:00:00Z') }) {
   const { db, registry } = openDatabase();
   const people = new Map();
   const participants = new Map();
@@ -72,6 +72,13 @@ function host({ groups, config = {}, now = new Date('2026-11-21T12:00:00Z') }) {
     resolveIdentityAddress: async wid => { const who = people.get(wid); if (!who) throw new Error('unknown ' + wid); return who; },
     resolveStableIdentityById: async id => { const who = [...people.values()].find(candidate => candidate.identityId === id); if (!who) throw new Error('unknown ' + id); return who; },
     protectedWidsForActions: async () => [owner.canonicalWid],
+    // `holders`: the moderators a core API 0.3.26 host lists (the bot is always there, as the account owner);
+    // 'throws' makes the capability fail; absent means an older host without it.
+    ...(holders === undefined ? {} : { permissionHoldersForScope: async ({ permission }) => {
+      if (holders === 'throws') throw new Error('unavailable');
+      if (permission !== 'plugin.moderation.manage') throw new Error('not declared: ' + permission);
+      return [{ identityId: bot.identityId, via: ['owner'] }, ...holders.map(who => ({ identityId: who.identityId, via: ['exception'] }))];
+    } }),
     getCurrentBotWid: async () => bot.canonicalWid,
     listEnabledScopes: async () => [{ scopeId: 'scope-1', kind: 'COMMUNITY_LIKE', name: 'Climbers' }],
     enqueuePluginJob: async job => { jobs.push(job); },

@@ -6,10 +6,12 @@ import type { StableIdentityAddressResolution } from '@wabs/plugin-sdk/identity'
 import type { PluginCoveredGroup } from '@wabs/plugin-sdk/hook-plugin';
 import type { PluginJobInput } from '@wabs/plugin-sdk/jobs';
 import type { GroupParticipant } from '@wabs/plugin-sdk/transport';
+import type { PluginPermissionHoldersForScope } from '@wabs/plugin-sdk/permission-holders';
 import { parseModerationConfig, type ModerationConfig } from './config';
 import {
   DAY_MS,
   MODERATION_DATABASE,
+  MODERATION_MANAGE_PERMISSION,
   MODERATION_NAMESPACE as ns,
   MODERATION_PLUGIN_ID,
   SUSPENSION_END_JOB
@@ -27,6 +29,8 @@ export interface ModerationDeps {
   resolveStableIdentityById?: ((identityId: string) => Promise<StableIdentityAddressResolution>) | undefined;
   communityParentGroupWidForGroup?: ((groupWid: string) => Promise<string | undefined>) | undefined;
   protectedWidsForActions?: (() => Promise<string[]>) | undefined;
+  /** Core API 0.3.26: who holds one of this plugin's permissions in a scope, i.e. the moderators an operator chose. */
+  permissionHoldersForScope?: PluginPermissionHoldersForScope | undefined;
   getCurrentBotWid?: (() => Promise<string | undefined>) | undefined;
   enqueuePluginJob?: ((input: PluginJobInput) => Promise<unknown>) | undefined;
   listEnabledScopes?: (() => Promise<Array<{ scopeId: string; name?: string | undefined }>>) | undefined;
@@ -163,35 +167,89 @@ export type AuthorityResult =
  * community parent when there is one, otherwise the group where the command runs. Being an admin of
  * one event or sub-group is not enough to moderate a whole community.
  */
+/**
+ * Identity ids of the scope's moderators: whoever the host lets use plugin.moderation.manage there (the
+ * owner, subowners, bot admins and the people an operator allowed, for example on the console's Access
+ * page). Undefined on hosts without that capability, so callers fall back to WhatsApp group admins.
+ */
+export async function moderatorIdentityIds(deps: ModerationDeps, scopeId: string): Promise<Set<string> | undefined> {
+  if (!deps.permissionHoldersForScope) return undefined;
+  try {
+    const holders = await deps.permissionHoldersForScope({ scopeId, permission: MODERATION_MANAGE_PERMISSION });
+    return new Set(holders.map((holder) => holder.identityId));
+  } catch {
+    return undefined;
+  }
+}
+
+/** The scope's moderators as members, never the bot itself; undefined when the host can't tell. */
+export async function moderatorsOf(deps: ModerationDeps, scopeId: string): Promise<Member[] | undefined> {
+  const ids = await moderatorIdentityIds(deps, scopeId);
+  if (!ids) return undefined;
+  const bot = await deps.getCurrentBotWid?.().catch(() => undefined);
+  const members: Member[] = [];
+  for (const identityId of [...ids].sort()) {
+    const member = await memberById(deps, identityId);
+    if (member && !(bot && member.addresses.has(bot))) members.push(member);
+  }
+  return members;
+}
+
+/** Groups whose WhatsApp admins count: the configured ones, else the community group, else the group itself. */
+async function authorityGroups(deps: ModerationDeps, config: ModerationConfig, groupWid: string | undefined): Promise<string[]> {
+  if (config.authorityGroupChatIds.length > 0 || !groupWid) return config.authorityGroupChatIds;
+  const parent = await deps.communityParentGroupWidForGroup?.(groupWid).catch(() => undefined);
+  return [parent ?? groupWid];
+}
+
+async function authorityAdminWids(deps: ModerationDeps, groups: string[]): Promise<Set<string>> {
+  const admins = new Set<string>();
+  for (const group of groups) {
+    for (const participant of await participantsOf(deps, group)) {
+      if (participant.isAdmin || participant.isSuperAdmin) admins.add(participant.wid);
+    }
+  }
+  return admins;
+}
+
+/**
+ * Whether the acting moderator may moderate here. The host has already checked plugin.moderation.manage
+ * for every /mod command, so that is enough by default. With requireGroupAdmin they must also be a
+ * WhatsApp admin of an authority group.
+ */
 export async function checkAuthority(
   deps: ModerationDeps,
   config: ModerationConfig,
   actor: Member,
   groupWid: string | undefined
 ): Promise<AuthorityResult> {
-  const configured = config.authorityGroupChatIds;
-  let authority = configured;
-  if (authority.length === 0 && groupWid) {
-    const parent = await deps.communityParentGroupWidForGroup?.(groupWid).catch(() => undefined);
-    authority = [parent ?? groupWid];
-  }
+  if (!config.requireGroupAdmin) return { ok: true };
+  const authority = await authorityGroups(deps, config, groupWid);
   if (authority.length === 0) return { ok: false };
-  for (const authorityGroup of authority) {
-    const participants = await participantsOf(deps, authorityGroup);
-    if (participants.some((participant) => (participant.isAdmin || participant.isSuperAdmin) && actor.addresses.has(participant.wid))) {
-      return { ok: true };
-    }
-  }
+  const admins = await authorityAdminWids(deps, authority);
+  if ([...actor.addresses].some((address) => admins.has(address))) return { ok: true };
   return { ok: false, authorityLabel: authority.join(', ') };
 }
 
-/** Admins of the authority groups, for private alerts. Without any, the admins of the given group. */
-export async function adminRecipients(deps: ModerationDeps, config: ModerationConfig, groupWid: string | undefined): Promise<string[]> {
-  let authority = config.authorityGroupChatIds;
-  if (authority.length === 0 && groupWid) {
-    const parent = await deps.communityParentGroupWidForGroup?.(groupWid).catch(() => undefined);
-    authority = [parent ?? groupWid];
+/**
+ * Who receives private alerts and reports: the scope's moderators (with requireGroupAdmin, only those who
+ * are also WhatsApp admins of an authority group). On hosts that can't list moderators: the WhatsApp admins
+ * of the authority groups, without the owner and subowners, as before.
+ */
+export async function adminRecipients(
+  deps: ModerationDeps,
+  config: ModerationConfig,
+  scopeId: string,
+  groupWid: string | undefined
+): Promise<string[]> {
+  const moderators = await moderatorsOf(deps, scopeId);
+  if (moderators) {
+    const admins = config.requireGroupAdmin ? await authorityAdminWids(deps, await authorityGroups(deps, config, groupWid)) : undefined;
+    return [...new Set(moderators
+      .filter((member) => !admins || [...member.addresses].some((address) => admins.has(address)))
+      .map((member) => member.deliveryChatId))].sort();
   }
+  const authority = await authorityGroups(deps, config, groupWid);
   const protectedWids = new Set(await deps.protectedWidsForActions?.().catch(() => []) ?? []);
   const bot = await deps.getCurrentBotWid?.().catch(() => undefined);
   const recipients = new Set<string>();

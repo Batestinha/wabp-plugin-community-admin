@@ -16,6 +16,7 @@ import {
   adminRecipients,
   alertActions,
   checkAuthority,
+  moderatorsOf,
   configFor,
   database,
   formatDate,
@@ -164,9 +165,15 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
     const prepared = await prepare(deps, ctx);
     if (isResult(prepared)) return prepared;
     const { config, db, scopeId } = prepared;
-    const authority = config.authorityGroupChatIds.length
+    const groupAdmins = config.authorityGroupChatIds.length
       ? ctx.t(`${ns}.authority.configured`, { count: config.authorityGroupChatIds.length })
       : ctx.t(`${ns}.authority.parent`);
+    const moderators = await moderatorsOf(deps, scopeId);
+    const authority = !moderators
+      ? groupAdmins
+      : config.requireGroupAdmin
+        ? ctx.t(`${ns}.authority.moderatorsAndAdmins`, { count: moderators.length, admins: groupAdmins })
+        : ctx.t(`${ns}.authority.moderators`, { count: moderators.length });
     return reply(ctx.t(`${ns}.status`, {
       state: ctx.t(`${ns}.state.${config.enabled ? 'on' : 'off'}`),
       dry: config.dryRun ? ctx.t(`${ns}.state.dry`) : '',
@@ -276,7 +283,7 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
     const actions: PluginAction[] = [audit,
       { type: 'message.sendText', chatId: member.deliveryChatId, text: noticeT(`${ns}.notice.warned`, { member: member.label, reason }) }];
     if (count >= config.warnings.alertAt) {
-      actions.push(...alertActions(await adminRecipients(deps, config, ctx.groupWid), ctx.t(`${ns}.alert.warningLimit`, { member: member.label, count })));
+      actions.push(...alertActions(await adminRecipients(deps, config, scopeId, ctx.groupWid), ctx.t(`${ns}.alert.warningLimit`, { member: member.label, count })));
     }
     return reply(ctx.t(`${ns}.warned`, { member: member.label, count, dry: '' }), actions);
   });
@@ -411,7 +418,7 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
     if (created) {
       const reasonText = ctx.command.rawArgs.replace(/^\*\s*/u, '').trim();
       actions.push({ type: 'audit.record', action: 'moderation.report.opened', targetJson: { scopeId, reportId: report.id, groupWid: ctx.groupWid } });
-      actions.push(...alertActions(await adminRecipients(deps, config, ctx.groupWid), ctx.t(`${ns}.alert.report`, {
+      actions.push(...alertActions(await adminRecipients(deps, config, scopeId, ctx.groupWid), ctx.t(`${ns}.alert.report`, {
         id: report.id,
         group: await groupLabel(deps, scopeId, ctx.groupWid),
         reporter: reporter?.label ?? '?',

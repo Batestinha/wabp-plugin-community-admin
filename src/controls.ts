@@ -45,7 +45,8 @@ const ETIQUETTE = 'Group etiquette';
 export const moderationControls: ModerationControl[] = [
   toggle(GENERAL, 'enabled', 'Enabled', 'Turn moderation on for this scope.'),
   toggle(GENERAL, 'dryRun', 'Dry run', 'Only record what would happen in the audit log; nothing is deleted, removed or sent.'),
-  tags(GENERAL, 'authorityGroupChatIds', 'Authority groups', 'Groups whose admins may moderate this scope. Empty: the community group when there is one, otherwise each group\'s own admins.'),
+  toggle(GENERAL, 'requireGroupAdmin', 'Also require WhatsApp admin', 'Moderators are the people allowed to moderate this scope: on the Access page, give them an "always allow" for plugin.moderation.manage in this scope (the account owner and subowners always may). They get the reports and alerts. Turn this on to also require them to be WhatsApp admins of the authority groups.'),
+  tags(GENERAL, 'authorityGroupChatIds', 'Authority groups', 'Only with "Also require WhatsApp admin": groups whose WhatsApp admins may moderate. Empty: the community group when there is one, otherwise each group\'s own admins.'),
   tags(GENERAL, 'exemptGroupChatIds', 'Exempt groups', 'Groups of this scope where moderation never acts.'),
   toggle(GENERAL, 'reports.enabled', 'Member reports', 'Let members report a message to the admins with /report.'),
   number(GENERAL, 'warnings.ttlDays', 'Warnings last', 'Days a warning stays active.', 1, 365, 'days'),
