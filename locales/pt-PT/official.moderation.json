@@ -72,6 +72,7 @@
   "official.moderation.notice.suspended": "Foste suspenso dos grupos de {scope} até {until}. Motivo: {reason}. Vais ser adicionado outra vez automaticamente quando terminar.",
   "official.moderation.notice.expelled": "Foste removido dos grupos de {scope}. Motivo: {reason}.",
   "official.moderation.notice.restored": "A tua suspensão de {scope} terminou. Estou a adicionar-te outra vez aos grupos; se o WhatsApp pedir, aceita o convite.",
+  "official.moderation.notice.restoredExpulsion": "A tua expulsão de {scope} foi levantada. Estou a adicionar-te outra vez aos grupos; se o WhatsApp pedir, aceita o convite.",
   "official.moderation.notice.warned": "{member}, isto é um aviso dos moderadores: {reason}",
   "official.moderation.alert.rejoin": "{member} tem uma {kind} ativa e tentou voltar a entrar em {group}; removi-o outra vez.{dry}",
   "official.moderation.alert.autoExpel": "Expulsei {member} por spam logo depois de entrar ({rule}) em {group}.{dry} Usa /mod lift @membro se foi um engano.",

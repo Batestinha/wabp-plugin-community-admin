@@ -77,6 +77,7 @@ export const moderationMessages: MessageCatalog = {
   [`${ns}.notice.suspended`]: 'You have been suspended from the groups of {scope} until {until}. Reason: {reason}. You will be added back automatically when it ends.',
   [`${ns}.notice.expelled`]: 'You have been removed from the groups of {scope}. Reason: {reason}.',
   [`${ns}.notice.restored`]: 'Your suspension from {scope} has ended. I am adding you back to the groups now; if WhatsApp asks, accept the invitation.',
+  [`${ns}.notice.restoredExpulsion`]: 'Your expulsion from {scope} has been lifted. I am adding you back to the groups now; if WhatsApp asks, accept the invitation.',
   [`${ns}.notice.warned`]: '{member}, this is a warning from the moderators: {reason}',
 
   [`${ns}.alert.rejoin`]: '{member} has an active {kind} and tried to rejoin {group}; I removed them again.{dry}',

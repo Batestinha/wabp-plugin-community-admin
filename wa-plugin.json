@@ -8,7 +8,7 @@
   },
   "description": "Suspend or expel members, take member reports, stop spam and raids, and apply group etiquette rules, for communities and standalone groups.",
   "kind": "managed_group",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "coreApiRange": "^0.3.24",
   "entrypoint": "dist/index.js",
   "messageNamespace": "official.moderation",
@@ -122,7 +122,7 @@
   "dangerousActions": [
     "message.delete",
     "group.removeParticipant",
-    "group.addParticipantsWithHistory",
+    "group.addParticipant",
     "group.rejectMembershipRequest",
     "group.lockMessages",
     "group.unlockMessages",

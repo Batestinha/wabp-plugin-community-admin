@@ -1,6 +1,6 @@
 export const MODERATION_PLUGIN_ID = 'official.moderation';
 export const MODERATION_NAMESPACE = MODERATION_PLUGIN_ID;
-export const MODERATION_VERSION = '0.2.0';
+export const MODERATION_VERSION = '0.2.1';
 export const MODERATION_CORE_API_RANGE = '^0.3.24';
 export const MODERATION_DATABASE = 'moderation';
 export const MODERATION_MANAGE_PERMISSION = 'plugin.moderation.manage';
@@ -12,7 +12,7 @@ export const LOCK_EXPIRE_JOB = 'lock.expire';
 export const MODERATION_DANGEROUS_ACTIONS = [
   'message.delete',
   'group.removeParticipant',
-  'group.addParticipantsWithHistory',
+  'group.addParticipant',
   'group.rejectMembershipRequest',
   'group.lockMessages',
   'group.unlockMessages',

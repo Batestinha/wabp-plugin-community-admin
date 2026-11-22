@@ -158,11 +158,45 @@ test('the end job adds the member back where they were removed, clears the stand
   h.setNow(job.runAt);
   const ended = await hooks.onPluginJob({ pluginId: 'official.moderation', scopeId: 'scope-1', receivedAt: new Date(),
     jobName: 'suspension.end', payload: job.payload, runAt: job.runAt });
-  assert.deepEqual(types(ended), ['audit.record', 'member.clearStanding', 'group.addParticipantsWithHistory',
-    'group.addParticipantsWithHistory', 'group.addParticipantsWithHistory', 'message.sendText']);
-  assert.ok(ended.filter(action => action.type === 'group.addParticipantsWithHistory').every(action => action.autoSendInviteV4 === true));
+  assert.deepEqual(types(ended), ['audit.record', 'member.clearStanding', 'group.addParticipant',
+    'group.addParticipant', 'group.addParticipant', 'message.sendText']);
+  // A plain add: the history variant isn't supported on whatsmeow and woke the host's WhatsApp Web provider.
+  assert.ok(ended.filter(action => action.type === 'group.addParticipant').every(action => action.userWid === rui.canonicalWid));
+  assert.ok(!ended.some(action => action.type === 'group.addParticipantsWithHistory'));
+  assert.match(ended.at(-1).text, /suspension from Climbers has ended/u);
   assert.equal(await hooks.onPluginJob({ pluginId: 'official.moderation', scopeId: 'scope-1', receivedAt: new Date(),
     jobName: 'suspension.end', payload: job.payload, runAt: job.runAt }), undefined, 'runs once');
+});
+
+test('the community announcement group is left to WhatsApp when the community group is covered', async () => {
+  const h = host({
+    groups: [
+      { groupWid: 'parent@g.us', name: 'Climbers', members: [[ana, true], [rui]] },
+      { groupWid: 'announce@g.us', name: 'Climbers', parent: 'parent@g.us', members: [[ana, true], [rui]] },
+      { groupWid: 'main@g.us', name: 'Main', parent: 'parent@g.us', members: [[ana, true], [rui]] }
+    ]
+  });
+  h.context.communityGroupWidForScope = async () => 'parent@g.us';
+  h.context.communityAnnouncementGroupWidForScope = async () => 'announce@g.us';
+  plugin.registerCommands(h.context);
+  const result = await run(h, ana, '/mod suspend 1d spam', { groupWid: 'main@g.us', mentions: [rui] });
+  const removed = result.pluginActions.filter(action => action.type === 'group.removeParticipant').map(action => action.groupWid).sort();
+  assert.deepEqual(removed, ['main@g.us', 'parent@g.us']);
+  assert.match(result.text, /Removed from 2 group\(s\)/u);
+});
+
+test('notices name the scope even when the context lists no scopes; an expulsion lift says expulsion', async () => {
+  const h = community();
+  delete h.context.listEnabledScopes;
+  h.context.communityGroupWidForScope = async () => 'parent@g.us';
+  plugin.registerCommands(h.context);
+  const expelled = await run(h, ana, '/mod expel spam', { groupWid: 'main@g.us', mentions: [rui] });
+  const notice = expelled.pluginActions.find(action => action.type === 'message.sendText' && action.chatId === rui.deliveryChatId);
+  assert.match(notice.text, /groups of Climbers\./u);
+  assert.doesNotMatch(notice.text, /scope-1/u);
+  const lifted = await run(h, ana, '/mod lift', { groupWid: 'main@g.us', mentions: [rui] });
+  const restored = lifted.pluginActions.find(action => action.type === 'message.sendText' && action.chatId === rui.deliveryChatId);
+  assert.match(restored.text, /Your expulsion from Climbers has been lifted/u);
 });
 
 test('lift ends an expulsion on request and extend moves the end date', async () => {

@@ -28,6 +28,8 @@ export interface ModerationDeps {
   resolveIdentityAddress?: ((wid: string) => Promise<StableIdentityAddressResolution>) | undefined;
   resolveStableIdentityById?: ((identityId: string) => Promise<StableIdentityAddressResolution>) | undefined;
   communityParentGroupWidForGroup?: ((groupWid: string) => Promise<string | undefined>) | undefined;
+  communityGroupWidForScope?: ((scopeId: string) => Promise<string | undefined>) | undefined;
+  communityAnnouncementGroupWidForScope?: ((scopeId: string) => Promise<string | undefined>) | undefined;
   protectedWidsForActions?: (() => Promise<string[]>) | undefined;
   /** Core API 0.3.26: who holds one of this plugin's permissions in a scope, i.e. the moderators an operator chose. */
   permissionHoldersForScope?: PluginPermissionHoldersForScope | undefined;
@@ -61,10 +63,18 @@ export function nowFrom(deps: ModerationDeps): Date {
   return deps.now?.() ?? new Date();
 }
 
-/** The scope's display name, for notices; falls back to its id. */
+/**
+ * The scope's display name, for notices. Command contexts may not list scopes, so it falls back to the
+ * community's own group name, then to the first covered group's name; the id is the last resort.
+ */
 export async function scopeName(deps: ModerationDeps, scopeId: string): Promise<string> {
   const scopes = await deps.listEnabledScopes?.().catch(() => []) ?? [];
-  return scopes.find((scope) => scope.scopeId === scopeId)?.name?.trim() || scopeId;
+  const named = scopes.find((scope) => scope.scopeId === scopeId)?.name?.trim();
+  if (named) return named;
+  const groups = await deps.coveredGroupsForScope?.(scopeId).catch(() => []) ?? [];
+  const community = await deps.communityGroupWidForScope?.(scopeId).catch(() => undefined);
+  const label = (wid: string | undefined) => groups.find((group) => group.groupWid === wid)?.groupDisplayName?.trim();
+  return label(community) || groups.map((group) => group.groupDisplayName?.trim()).find(Boolean) || scopeId;
 }
 
 export async function scopeTranslator(deps: ModerationDeps, scopeId: string): Promise<TranslateFn> {
@@ -127,10 +137,18 @@ export async function isProtected(deps: ModerationDeps, member: Member): Promise
   return [...member.addresses].some((address) => protectedWids.has(address));
 }
 
-/** Covered groups of the scope, minus exempt ones. Works the same for communities and standalone groups. */
+/**
+ * Covered groups of the scope that cases act on, minus exempt ones. Works the same for communities and
+ * standalone groups. The community announcement group is left out when the community group itself is
+ * covered: WhatsApp keeps it in step with community membership (removing someone from the community
+ * removes them there; adding them to a subgroup adds them there).
+ */
 export async function scopeGroups(deps: ModerationDeps, scopeId: string, config: ModerationConfig): Promise<ScopeGroup[]> {
   const groups = await deps.coveredGroupsForScope?.(scopeId) ?? [];
   const exempt = new Set(config.exemptGroupChatIds);
+  const community = await deps.communityGroupWidForScope?.(scopeId).catch(() => undefined);
+  const announcement = await deps.communityAnnouncementGroupWidForScope?.(scopeId).catch(() => undefined);
+  if (announcement && community && groups.some((group) => group.groupWid === community)) exempt.add(announcement);
   return groups
     .filter((group) => !exempt.has(group.groupWid))
     .map((group) => ({
@@ -407,17 +425,18 @@ export async function planRestore(deps: ModerationDeps, input: {
   ];
   if (member) {
     for (const group of readded) {
+      // A plain add: every transport supports it. The history variant isn't available on whatsmeow and
+      // made the host start its optional WhatsApp Web provider just to fail (seen 2026-11-22).
       actions.push({
-        type: 'group.addParticipantsWithHistory',
+        type: 'group.addParticipant',
         groupWid: group.groupWid,
-        userWids: [member.wid],
-        selectedMessageCount: 25,
-        autoSendInviteV4: true,
+        userWid: member.wid,
         reason: `${MODERATION_PLUGIN_ID}:${input.caseRow.kind}-${input.status}`
       });
     }
     const noticeT = await memberTranslator(deps, member.identityId, input.scopeId, input.t);
-    actions.push({ type: 'message.sendText', chatId: member.deliveryChatId, text: noticeT(`${ns}.notice.restored`, { scope: input.scopeLabel }) });
+    const noticeKey = input.caseRow.kind === 'expulsion' ? `${ns}.notice.restoredExpulsion` : `${ns}.notice.restored`;
+    actions.push({ type: 'message.sendText', chatId: member.deliveryChatId, text: noticeT(noticeKey, { scope: input.scopeLabel }) });
   }
   return { actions, readded };
 }
