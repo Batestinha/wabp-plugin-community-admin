@@ -1,6 +1,6 @@
 {
   "name": "@wabs/plugin-moderation",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Suspend or expel members, take member reports, stop spam and raids, and apply group etiquette rules, for communities and standalone groups.",
   "license": "MIT",
   "private": true,

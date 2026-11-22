@@ -8,7 +8,7 @@
   },
   "description": "Suspend or expel members, take member reports, stop spam and raids, and apply group etiquette rules, for communities and standalone groups.",
   "kind": "managed_group",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "coreApiRange": "^0.3.24",
   "entrypoint": "dist/index.js",
   "messageNamespace": "official.moderation",
@@ -433,7 +433,8 @@
           "max": 1000
         },
         "ui": {
-          "widget": "textarea",
+          "widget": "text",
+          "multiline": true,
           "helpText": "Extra text added to the private message a suspended member receives, for example where to keep reading the group history."
         }
       },
@@ -450,7 +451,8 @@
           "max": 1000
         },
         "ui": {
-          "widget": "textarea",
+          "widget": "text",
+          "multiline": true,
           "helpText": "Extra text added to the private message an expelled member receives."
         }
       },
@@ -458,15 +460,14 @@
         "pluginId": "official.moderation",
         "id": "plugin.official.moderation.shield.newMemberHours",
         "path": "shield.newMemberHours",
-        "label": "New member period",
+        "label": "New member period (hours)",
         "description": "Hours after joining during which spam can lead to automatic expulsion.",
         "section": "Spam and raid shield",
         "order": 130,
         "schema": {
           "type": "number",
           "min": 1,
-          "max": 720,
-          "unit": "hours"
+          "max": 720
         },
         "ui": {
           "widget": "number",

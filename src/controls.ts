@@ -33,7 +33,7 @@ const number = (section: string, path: string, label: string, description: strin
 const tags = (section: string, path: string, label: string, description: string) =>
   control(section, path, label, description, { type: 'array', items: { type: 'string' } }, 'tags');
 const text = (section: string, path: string, label: string, description: string, max: number) =>
-  control(section, path, label, description, { type: 'string', max }, 'textarea');
+  ({ ...control(section, path, label, description, { type: 'string', max }, 'text'), ui: { widget: 'text', multiline: true, helpText: description } });
 const choice = (section: string, path: string, label: string, description: string, values: Array<{ value: string; label: string }>) =>
   control(section, path, label, description, { type: 'enum', enum: values }, 'select');
 
@@ -57,7 +57,7 @@ export const moderationControls: ModerationControl[] = [
   text(CASES, 'suspension.noticeExtra', 'Suspension notice extra', 'Extra text added to the private message a suspended member receives, for example where to keep reading the group history.', 1000),
   text(CASES, 'expulsion.noticeExtra', 'Expulsion notice extra', 'Extra text added to the private message an expelled member receives.', 1000),
 
-  number(SHIELD, 'shield.newMemberHours', 'New member period', 'Hours after joining during which spam can lead to automatic expulsion.', 1, 720, 'hours'),
+  number(SHIELD, 'shield.newMemberHours', 'New member period (hours)', 'Hours after joining during which spam can lead to automatic expulsion.', 1, 720),
   choice(SHIELD, 'shield.inviteLinkPolicy', 'Group invite links', 'What to do with WhatsApp group or channel invite links.', SPAM_POLICIES),
   choice(SHIELD, 'shield.linkPolicy', 'Other links', 'What to do with links outside the allowed sites (or to the blocked sites, when listed).', POLICIES),
   tags(SHIELD, 'shield.allowedDomains', 'Allowed sites', 'Sites whose links are always fine.'),
