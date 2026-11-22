@@ -1,7 +1,7 @@
 {
-  "name": "@wabs/plugin-moderation",
-  "version": "0.2.2",
-  "description": "Suspend or expel members, take member reports, stop spam and raids, and apply group etiquette rules, for communities and standalone groups.",
+  "name": "@wabs/plugin-community-admin",
+  "version": "1.0.0",
+  "description": "Community administration, member reports, group creation and moderation under scoped administrator roles.",
   "license": "MIT",
   "private": true,
   "type": "commonjs",
@@ -23,9 +23,9 @@
     "zod"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node scripts/write-metadata.cjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "metadata": "npm run build && node scripts/write-metadata.cjs",
+    "metadata": "npm run build",
     "test": "npm run build && node --test tests/*.test.cjs",
     "release:archive": "npm run build && python scripts/package-release.py"
   },
@@ -33,7 +33,7 @@
     "node": ">=22"
   },
   "dependencies": {
-    "@wabs/plugin-sdk": "file:vendor/wabs-plugin-sdk-0.3.38-509bf9ef6de4.tgz",
+    "@wabs/plugin-sdk": "file:vendor/wabs-plugin-sdk-0.3.40-2af3aca828e4.tgz",
     "zod": "3.25.76"
   },
   "devDependencies": {

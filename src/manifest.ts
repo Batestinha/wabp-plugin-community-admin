@@ -1,4 +1,6 @@
 import type { PluginManifest } from '@wabs/plugin-sdk/manifest';
+import { doasManifest } from './actions/manifest';
+import { communitySubgroupsManifest } from './subgroups/manifest';
 import { moderationConfigSchema } from './config';
 import {
   LOCK_EXPIRE_JOB,
@@ -13,31 +15,41 @@ import {
   SUSPENSION_END_JOB
 } from './constants';
 import { moderationMessages } from './messages';
+import { doasMessages } from './actions/messages';
+import { communitySubgroupsMessages } from './subgroups/messages';
+
+const grants = ['moderate', 'group-info', 'group-settings', 'structure', 'send'].map(name => 'plugin.community-admin.' + name);
+const commands = [...new Set([...MODERATION_COMMANDS, ...doasManifest.commands, ...communitySubgroupsManifest.commands])];
 
 export const moderationManifest: PluginManifest = {
   pluginId: MODERATION_PLUGIN_ID,
-  name: 'Moderation',
+  name: 'Community Administration Assistant',
   author: { name: 'Batestinha', url: 'https://github.com/Batestinha' },
   kind: 'managed_group',
   version: MODERATION_VERSION,
   coreApiRange: MODERATION_CORE_API_RANGE,
   messageNamespace: ns,
   descriptionKey: `${ns}.description`,
-  defaultMessages: moderationMessages,
-  commands: MODERATION_COMMANDS,
+  defaultMessages: { ...moderationMessages, ...doasMessages, ...communitySubgroupsMessages,
+    [ns + '.help.family']: 'Community administration', [ns + '.help.feature.title']: 'Community Administration Assistant',
+    [ns + '.role.group.label']: 'Group Admin', [ns + '.role.group.description']: 'Moderate members and manage group information in this scope.',
+    [ns + '.role.community.label']: 'Community Admin', [ns + '.role.community.description']: 'Manage members, settings, structure and sending in this scope.',
+    [ns + '.subgroups.infoDenied']: 'Only administrators can edit information in this group.' },
+  commands,
   help: {
-    featureId: 'moderation',
+    featureId: 'community-admin',
     titleKey: `${ns}.help.feature.title`,
     summaryKey: `${ns}.help.feature.summaryNeutral`,
     order: 80,
     aliases: ['moderation', 'moderação', 'suspend', 'expel', 'report', 'denunciar'],
     topics: [
+      ...(doasManifest.help?.topics ?? []), ...(communitySubgroupsManifest.help?.topics ?? []),
       {
         topicId: 'moderate-members',
         titleKey: `${ns}.help.moderate.title`,
         summaryKey: `${ns}.help.moderate.summary`,
         order: 10,
-        commands: MODERATION_COMMANDS.filter((command) => command.startsWith('/mod ')),
+        commands: MODERATION_COMMANDS.filter((command) => command.startsWith('/admin ')),
         instructionKeys: [`${ns}.help.moderate.instruction`],
         exampleKeys: [`${ns}.help.moderate.example`],
         keywords: ['suspend', 'expel', 'ban', 'kick', 'warn', 'lift', 'lock'],
@@ -56,16 +68,21 @@ export const moderationManifest: PluginManifest = {
       }
     ]
   },
-  eventSubscriptions: ['message', 'participant.change', 'plugin.job'],
-  requiredPermissions: [MODERATION_MANAGE_PERMISSION],
+  eventSubscriptions: ['message', 'participant.change', 'group.scope.covered', 'plugin.job'],
+  requiredPermissions: grants,
+  roles: [
+    { key: 'group-admin', labelKey: ns + '.role.group.label', descriptionKey: ns + '.role.group.description', permissions: grants.slice(0, 2) },
+    { key: 'community-admin', labelKey: ns + '.role.community.label', descriptionKey: ns + '.role.community.description', permissions: grants }
+  ],
   requiredBotCapabilities: [],
   configSchema: moderationConfigSchema,
-  dangerousActions: [...MODERATION_DANGEROUS_ACTIONS],
-  backgroundJobs: [SUSPENSION_END_JOB, LOCK_EXPIRE_JOB],
+  dangerousActions: [...new Set([...MODERATION_DANGEROUS_ACTIONS, ...doasManifest.dangerousActions, ...communitySubgroupsManifest.dangerousActions])],
+  backgroundJobs: [SUSPENSION_END_JOB, LOCK_EXPIRE_JOB, 'scope.configuration.changed'],
   databases: [{ name: MODERATION_DATABASE, engine: 'sqlite', scope: 'account', migrations: 'migrations/moderation' }],
   dataVersion: '1',
   dependencies: [],
-  cancellation: { workflows: [] },
+  cancellation: communitySubgroupsManifest.cancellation,
+  services: communitySubgroupsManifest.services,
   assistant: {
     summary: 'Moderates the groups of a scope (a community or standalone groups): suspensions and expulsions, member reports, a spam and raid shield, and etiquette rules.',
     useCases: [
@@ -85,9 +102,9 @@ export const moderationManifest: PluginManifest = {
       'dryRun=true (the default) only records decisions in the audit log.'
     ],
     workflows: [
-      { intent: 'moderation_case', description: 'Suspend, expel, lift or extend.', commands: ['/mod suspend', '/mod expel', '/mod lift', '/mod extend'] },
-      { intent: 'moderation_report', description: 'Report a message, or act on a report.', commands: ['/report', '/mod resolve'] },
-      { intent: 'moderation_status', description: 'Show settings, cases and warnings.', commands: ['/mod status', '/mod cases', '/mod warnings'] }
+      { intent: 'moderation_case', description: 'Suspend, expel, lift or extend.', commands: ['/admin suspend', '/admin expel', '/admin lift', '/admin extend'] },
+      { intent: 'moderation_report', description: 'Report a message, or act on a report.', commands: ['/report', '/admin resolve'] },
+      { intent: 'moderation_status', description: 'Show settings, cases and warnings.', commands: ['/admin status', '/admin cases', '/admin warnings'] }
     ]
   }
 };

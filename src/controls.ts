@@ -37,15 +37,286 @@ const text = (section: string, path: string, label: string, description: string,
 const choice = (section: string, path: string, label: string, description: string, values: Array<{ value: string; label: string }>) =>
   control(section, path, label, description, { type: 'enum', enum: values }, 'select');
 
-const GENERAL = 'Moderation';
+const GENERAL = 'People and roles';
 const CASES = 'Suspensions and expulsions';
 const SHIELD = 'Spam and raid shield';
 const ETIQUETTE = 'Group etiquette';
 
+const groupCreationControls: ModerationControl[] = [
+  {
+    "id": "plugin.official.community-admin.maxParticipants",
+    "path": "maxParticipants",
+    "label": "Maximum members",
+    "description": "Maximum number of requested members in one subgroup creation flow.",
+    "section": "Group creation",
+    "order": 30,
+    "schema": {
+      "type": "number",
+      "unit": "items",
+      "min": 1,
+      "max": 256
+    },
+    "ui": {
+      "widget": "number",
+      "helpText": "Maximum number of requested members in one subgroup creation flow."
+    }
+  },
+  {
+    "id": "plugin.official.community-admin.creationPolicy.infoEditPermission",
+    "path": "creationPolicy.infoEditPermission",
+    "label": "Edit group info",
+    "description": "Choose who can edit the new subgroup name, icon, description, and settings.",
+    "section": "Group creation",
+    "order": 110,
+    "schema": {
+      "type": "enum",
+      "enum": [
+        {
+          "value": "all_members",
+          "label": "All members"
+        },
+        {
+          "value": "admins_only",
+          "label": "Only admins"
+        }
+      ]
+    },
+    "ui": {
+      "widget": "select",
+      "options": [
+        {
+          "value": "all_members",
+          "label": "All members"
+        },
+        {
+          "value": "admins_only",
+          "label": "Only admins"
+        }
+      ],
+      "helpText": "Choose who can edit the new subgroup name, icon, description, and settings."
+    }
+  },
+  {
+    "id": "plugin.official.community-admin.creationPolicy.sendMessagesPermission",
+    "path": "creationPolicy.sendMessagesPermission",
+    "label": "Send messages",
+    "description": "Choose whether all members or only admins can send messages in new subgroups.",
+    "section": "Group creation",
+    "order": 120,
+    "schema": {
+      "type": "enum",
+      "enum": [
+        {
+          "value": "all_members",
+          "label": "All members"
+        },
+        {
+          "value": "admins_only",
+          "label": "Only admins"
+        }
+      ]
+    },
+    "ui": {
+      "widget": "select",
+      "options": [
+        {
+          "value": "all_members",
+          "label": "All members"
+        },
+        {
+          "value": "admins_only",
+          "label": "Only admins"
+        }
+      ],
+      "helpText": "Choose whether all members or only admins can send messages in new subgroups."
+    }
+  },
+  {
+    "id": "plugin.official.community-admin.creationPolicy.memberAddPermission",
+    "path": "creationPolicy.memberAddPermission",
+    "label": "Add members / invite links",
+    "description": "Choose who can add members and create or share invite links in new subgroups.",
+    "section": "Group creation",
+    "order": 130,
+    "schema": {
+      "type": "enum",
+      "enum": [
+        {
+          "value": "all_members",
+          "label": "All members"
+        },
+        {
+          "value": "admins_only",
+          "label": "Only admins"
+        }
+      ]
+    },
+    "ui": {
+      "widget": "select",
+      "options": [
+        {
+          "value": "all_members",
+          "label": "All members"
+        },
+        {
+          "value": "admins_only",
+          "label": "Only admins"
+        }
+      ],
+      "helpText": "Choose who can add members and create or share invite links in new subgroups."
+    }
+  },
+  {
+    "id": "plugin.official.community-admin.creationPolicy.joinApproval",
+    "path": "creationPolicy.joinApproval",
+    "label": "Approve new members",
+    "description": "Require admins to approve new subgroup join requests.",
+    "section": "Group creation",
+    "order": 140,
+    "schema": {
+      "type": "boolean"
+    },
+    "ui": {
+      "widget": "toggle",
+      "helpText": "Require admins to approve new subgroup join requests."
+    }
+  },
+  {
+    "id": "plugin.official.community-admin.creationPolicy.disappearingMessages",
+    "path": "creationPolicy.disappearingMessages",
+    "label": "Disappearing messages",
+    "description": "Set the disappearing-message timer for new subgroups.",
+    "section": "Group creation",
+    "order": 150,
+    "schema": {
+      "type": "enum",
+      "enum": [
+        {
+          "value": "off",
+          "label": "Off"
+        },
+        {
+          "value": "24h",
+          "label": "24 hours"
+        },
+        {
+          "value": "7d",
+          "label": "7 days"
+        },
+        {
+          "value": "90d",
+          "label": "90 days"
+        }
+      ]
+    },
+    "ui": {
+      "widget": "select",
+      "options": [
+        {
+          "value": "off",
+          "label": "Off"
+        },
+        {
+          "value": "24h",
+          "label": "24 hours"
+        },
+        {
+          "value": "7d",
+          "label": "7 days"
+        },
+        {
+          "value": "90d",
+          "label": "90 days"
+        }
+      ],
+      "helpText": "Set the disappearing-message timer for new subgroups."
+    }
+  },
+  {
+    "id": "plugin.official.community-admin.creationPolicy.parentGroupCreatePermission",
+    "path": "creationPolicy.parentGroupCreatePermission",
+    "label": "Who can create groups",
+    "description": "Choose who can create groups in the parent community.",
+    "section": "Group creation",
+    "order": 200,
+    "schema": {
+      "type": "enum",
+      "enum": [
+        {
+          "value": "everyone",
+          "label": "Everyone"
+        },
+        {
+          "value": "community_admins",
+          "label": "Only community admins"
+        }
+      ]
+    },
+    "ui": {
+      "widget": "select",
+      "options": [
+        {
+          "value": "everyone",
+          "label": "Everyone"
+        },
+        {
+          "value": "community_admins",
+          "label": "Only community admins"
+        }
+      ],
+      "helpText": "Choose who can create groups in the parent community."
+    }
+  },
+  {
+    "id": "plugin.official.community-admin.creationPolicy.parentMemberAddPermission",
+    "path": "creationPolicy.parentMemberAddPermission",
+    "label": "Who can add members",
+    "description": "Choose who can add new members to the parent community.",
+    "section": "Group creation",
+    "order": 210,
+    "schema": {
+      "type": "enum",
+      "enum": [
+        {
+          "value": "everyone",
+          "label": "Everyone"
+        },
+        {
+          "value": "community_admins",
+          "label": "Only community admins"
+        }
+      ]
+    },
+    "ui": {
+      "widget": "select",
+      "options": [
+        {
+          "value": "everyone",
+          "label": "Everyone"
+        },
+        {
+          "value": "community_admins",
+          "label": "Only community admins"
+        }
+      ],
+      "helpText": "Choose who can add new members to the parent community."
+    }
+  }
+];
+
 export const moderationControls: ModerationControl[] = [
-  toggle(GENERAL, 'enabled', 'Enabled', 'Turn moderation on for this scope.'),
+  toggle(GENERAL, 'enabled', 'Enabled', 'Enable the assistant here. Assign Group Admin and Community Admin on the Access page.'),
+  choice('Join approval', 'joinApproval.policy', 'Require approval in every group', 'Apply to existing and newly created managed groups.',
+    [{ value: 'leave', label: 'Keep existing settings' }, { value: 'require', label: 'Require approval' }]),
+  toggle('Join approval', 'joinApproval.autoApprove', 'Automatically approve other members', 'Approve requests from members without a hold while no raid lock is active.'),
+  toggle('Admin actions', 'requireConfirmForHighRisk', 'Confirm high-risk actions', 'Require confirmation before high-risk admin actions.'),
+  toggle('Admin actions', 'fanout.enabled', 'Community-wide actions', 'Allow authorized actions in multiple managed groups.'),
+  toggle('Admin actions', 'fanout.requireExplicitFlag', 'Require an explicit fan-out flag', 'Require the command to select multiple groups explicitly.'),
+  number('Admin actions', 'fanout.maxTargets', 'Maximum groups per command', 'Limit community-wide actions to this many groups.', 1, 250),
+  toggle('Admin actions', 'fanout.includeParentByDefault', 'Include the community parent', 'Include the parent in a community-wide action by default.'),
+  ...groupCreationControls,
   toggle(GENERAL, 'dryRun', 'Dry run', 'Only record what would happen in the audit log; nothing is deleted, removed or sent.'),
-  toggle(GENERAL, 'requireGroupAdmin', 'Also require WhatsApp admin', 'Moderators are the people allowed to moderate this scope: on the Access page, give them an "always allow" for plugin.moderation.manage in this scope (the account owner and subowners always may). They get the reports and alerts. Turn this on to also require them to be WhatsApp admins of the authority groups.'),
+  toggle(GENERAL, 'requireGroupAdmin', 'Also require WhatsApp admin', 'Moderators are the people allowed to moderate this scope: on the Access page, give them an "always allow" for plugin.community-admin.moderate in this scope (the account owner and subowners always may). They get the reports and alerts. Turn this on to also require them to be WhatsApp admins of the authority groups.'),
   tags(GENERAL, 'authorityGroupChatIds', 'Authority groups', 'Only with "Also require WhatsApp admin": groups whose WhatsApp admins may moderate. Empty: the community group when there is one, otherwise each group\'s own admins.'),
   tags(GENERAL, 'exemptGroupChatIds', 'Exempt groups', 'Groups of this scope where moderation never acts.'),
   toggle(GENERAL, 'reports.enabled', 'Member reports', 'Let members report a message to the admins with /report.'),

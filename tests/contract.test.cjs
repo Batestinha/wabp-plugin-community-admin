@@ -34,6 +34,6 @@ test('every configuration path has a console control and Portuguese covers every
 });
 
 test('the plugin knows nothing about any particular host history service', () => {
-  const sources = fs.readdirSync(path.join(__dirname, '../src')).map(file => fs.readFileSync(path.join(__dirname, '../src', file), 'utf8')).join('\n');
+  const sources = fs.readdirSync(path.join(__dirname, '../src'), { recursive: true }).filter(file => file.endsWith('.ts')).map(file => fs.readFileSync(path.join(__dirname, '../src', file), 'utf8')).join('\n');
   assert.doesNotMatch(sources, /chat ?archive|topomare/iu);
 });

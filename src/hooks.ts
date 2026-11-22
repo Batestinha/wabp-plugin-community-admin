@@ -32,6 +32,19 @@ const ADMIN_CACHE_SECONDS = 600;
 
 export function createModerationHooks(context: HookContext): PluginRuntimeHooks {
   return {
+    async onRuntimeReady() {
+      for (const { scopeId } of await context.listEnabledScopes?.() ?? []) {
+        const config = await configFor(context, scopeId);
+        if (config.enabled && config.joinApproval.policy === 'require') {
+          await context.enqueuePluginJob?.({ jobName: 'scope.configuration.changed', scopeId, payload: {},
+            dedupeKey: 'community-admin:join-approval:' + scopeId, replaceRetainedTerminalJob: true });
+        }
+      }
+    },
+    async onGroupScopeCovered(event) {
+      if (event.newManagementMode !== 'MANAGE') return;
+      return requiredApproval(context, event.scopeId, event.chatId);
+    },
     async onMessage(event) {
       return handleMessage(context, event);
     },
@@ -194,11 +207,23 @@ export async function handleParticipantChange(context: HookContext, event: Plugi
   const actions: PluginAction[] = [];
   const mode = event.managementMode ?? 'OBSERVE';
 
+  const standing = await context.memberStandingsForScope?.(event.scopeId);
   for (const identity of event.affectedIdentities) {
     if (bots.has(identity.identityId)) continue;
     if (arrival) recordJoin(db, event.scopeId, identity.identityId, now);
-    const held = config.suspension.rejoinGuard ? activeCase(db, event.scopeId, identity.identityId) : undefined;
-    if (!held) continue;
+    const recorded = standing?.find(member => member.identityId === identity.identityId);
+    const held = activeCase(db, event.scopeId, identity.identityId) ??
+      (recorded ? { id: recorded.caseRef, kind: recorded.standing === 'expelled' ? 'expulsion' : 'suspension' } : undefined);
+    if (!held) {
+      if (request && config.joinApproval.autoApprove && mode === 'MANAGE' && !config.dryRun &&
+          !db.get('SELECT 1 FROM locks WHERE group_wid = ? AND reason = ? AND locked_until > ?', event.groupWid, 'raid', now.toISOString())) {
+        actions.push({ type: 'group.approveMembershipRequest', groupWid: event.groupWid, userWid: identity.canonicalWid,
+          reason: MODERATION_PLUGIN_ID + ':auto-approve' },
+          { type: 'audit.record', action: 'community-admin.join-request.approved',
+            targetJson: { scopeId: event.scopeId, groupWid: event.groupWid, identityId: identity.identityId } });
+      }
+      continue;
+    }
     actions.push({
       type: 'audit.record',
       action: 'moderation.rejoin.blocked',
@@ -255,7 +280,17 @@ async function raidActions(
   return actions;
 }
 
+async function requiredApproval(context: HookContext, scopeId: string, groupWid?: string): Promise<PluginAction[]> {
+  const config = await configFor(context, scopeId);
+  if (!config.enabled || config.joinApproval.policy !== 'require') return [];
+  const groups = await context.coveredGroupsForScope?.(scopeId) ?? [];
+  return groups.filter(group => group.managementMode === 'MANAGE' && (!groupWid || group.groupWid === groupWid))
+    .map(group => ({ type: 'group.setMembershipApprovalMode', groupWid: group.groupWid, enabled: true,
+      reason: MODERATION_PLUGIN_ID + ':require-join-approval' }));
+}
+
 export async function handleJob(context: HookContext, job: PluginJobEvent): Promise<PluginAction[] | void> {
+  if (job.jobName === 'scope.configuration.changed') return requiredApproval(context, job.scopeId);
   const db = database(context);
   if (!db) return;
   const now = nowFrom(context);

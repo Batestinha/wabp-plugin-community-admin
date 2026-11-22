@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { communitySubgroupCreationPolicySchema } from './subgroups/creationPolicy';
 
 /** off: ignore; audit: record only; warn: warn the author; delete: remove the message; delete-and-warn: both. */
 export const rulePolicySchema = z.enum(['off', 'audit', 'warn', 'delete', 'delete-and-warn']);
@@ -10,6 +11,14 @@ const clock = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/u, 'use HH:MM');
 
 export const moderationConfigSchema = z.object({
   enabled: z.boolean().default(false),
+  requireConfirmForHighRisk: z.boolean().default(true),
+  fanout: z.object({
+    enabled: z.boolean().default(false), requireExplicitFlag: z.boolean().default(true),
+    maxTargets: z.number().int().positive().max(250).default(25), includeParentByDefault: z.boolean().default(false)
+  }).strict().default({}),
+  maxParticipants: z.number().int().min(1).max(256).default(128),
+  creationPolicy: communitySubgroupCreationPolicySchema,
+  joinApproval: z.object({ policy: z.enum(['leave', 'require']).default('leave'), autoApprove: z.boolean().default(false) }).strict().default({}),
   /** While true, every decision is only recorded in the audit log; nothing is deleted, removed or sent. */
   dryRun: z.boolean().default(true),
   /**
@@ -18,7 +27,7 @@ export const moderationConfigSchema = z.object({
    */
   authorityGroupChatIds: chatIds,
   /**
-   * Moderators are whoever the host lets moderate the scope (plugin.moderation.manage: the owner,
+   * Moderators are whoever the host lets moderate the scope (plugin.community-admin.moderate: the owner,
    * subowners, and people an operator allows, for example on the console's Access page). When true they
    * must also be WhatsApp admins of the authority groups, and only those get alerts.
    */

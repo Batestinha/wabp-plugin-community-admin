@@ -186,7 +186,7 @@ export type AuthorityResult =
  * one event or sub-group is not enough to moderate a whole community.
  */
 /**
- * Identity ids of the scope's moderators: whoever the host lets use plugin.moderation.manage there (the
+ * Identity ids of the scope's moderators: whoever the host lets use plugin.community-admin.moderate there (the
  * owner, subowners, bot admins and the people an operator allowed, for example on the console's Access
  * page). Undefined on hosts without that capability, so callers fall back to WhatsApp group admins.
  */
@@ -231,8 +231,8 @@ async function authorityAdminWids(deps: ModerationDeps, groups: string[]): Promi
 }
 
 /**
- * Whether the acting moderator may moderate here. The host has already checked plugin.moderation.manage
- * for every /mod command, so that is enough by default. With requireGroupAdmin they must also be a
+ * Whether the acting moderator may moderate here. The host has already checked plugin.community-admin.moderate
+ * for every /admin command, so that is enough by default. With requireGroupAdmin they must also be a
  * WhatsApp admin of an authority group.
  */
 export async function checkAuthority(
