@@ -343,7 +343,7 @@ function isProtectedBotTarget(input: DoasPlanInput): boolean {
     return false;
   }
   if (!input.userIdentityId || !input.botIdentityId) {
-    throw new Error('Authoritative target and bot identities are required for destructive Do As actions.');
+    throw new Error('Authoritative target and bot identities are required for destructive administration actions.');
   }
   return input.userIdentityId === input.botIdentityId;
 }

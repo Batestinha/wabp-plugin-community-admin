@@ -1212,11 +1212,11 @@ async function botProtectionInput(
     return {};
   }
   if (!context.getCurrentBotWid || !context.resolveIdentityAddress) {
-    throw new Error('Authoritative identity resolution is unavailable for destructive Do As actions.');
+    throw new Error('Authoritative identity resolution is unavailable for destructive administration actions.');
   }
   const botWid = await context.getCurrentBotWid();
   if (!botWid) {
-    throw new Error('The WhatsApp session identity is unavailable for destructive Do As actions.');
+    throw new Error('The WhatsApp session identity is unavailable for destructive administration actions.');
   }
   const [userIdentity, botIdentity] = await Promise.all([
     context.resolveIdentityAddress(userWid),

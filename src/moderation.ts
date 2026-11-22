@@ -188,7 +188,7 @@ export type AuthorityResult =
 /**
  * Identity ids of the scope's moderators: whoever the host lets use plugin.community-admin.moderate there (the
  * owner, subowners, bot admins and the people an operator allowed, for example on the console's Access
- * page). Undefined on hosts without that capability, so callers fall back to WhatsApp group admins.
+ * page). Undefined when the authority inventory is unavailable.
  */
 export async function moderatorIdentityIds(deps: ModerationDeps, scopeId: string): Promise<Set<string> | undefined> {
   if (!deps.permissionHoldersForScope) return undefined;

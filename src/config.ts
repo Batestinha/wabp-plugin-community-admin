@@ -27,9 +27,7 @@ export const moderationConfigSchema = z.object({
     defaultDays: z.number().int().min(1).max(365).default(7),
     maxDays: z.number().int().min(1).max(3650).default(365),
     /** Extra operator text appended to the private suspension notice, for example where to read the chat history. */
-    noticeExtra: z.string().max(1000).default(''),
-    /** Remove and reject anyone with an active case who tries to rejoin a covered group. */
-    rejoinGuard: z.boolean().default(true)
+    noticeExtra: z.string().max(1000).default('')
   }).strict().default({}),
   expulsion: z.object({
     noticeExtra: z.string().max(1000).default('')

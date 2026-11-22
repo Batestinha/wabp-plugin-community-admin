@@ -323,7 +323,6 @@ export const moderationControls: ModerationControl[] = [
 
   number(CASES, 'suspension.defaultDays', 'Default suspension', 'Length of a suspension when the command gives none.', 1, 365, 'days'),
   number(CASES, 'suspension.maxDays', 'Longest suspension', 'Longest suspension an admin may give.', 1, 3650, 'days'),
-  toggle(CASES, 'suspension.rejoinGuard', 'Block rejoining', 'Remove or reject anyone with an active suspension or expulsion who tries to rejoin a group here.'),
   text(CASES, 'suspension.noticeExtra', 'Suspension notice extra', 'Extra text added to the private message a suspended member receives, for example where to keep reading the group history.', 1000),
   text(CASES, 'expulsion.noticeExtra', 'Expulsion notice extra', 'Extra text added to the private message an expelled member receives.', 1000),
 

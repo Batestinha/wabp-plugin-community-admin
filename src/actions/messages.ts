@@ -2,10 +2,10 @@ import type { MessageCatalog } from '@wabs/plugin-sdk/i18n';
 
 export const doasMessages: MessageCatalog = {
   'official.community-admin.actions.description': 'Scoped WhatsApp group administration through bot-mediated admin actions.',
-  'official.community-admin.actions.help.family': 'Do As',
+  'official.community-admin.actions.help.family': 'Group administration',
   'official.community-admin.actions.help.command': 'Ask the bot to perform a scoped WhatsApp group admin action.',
   'official.community-admin.actions.help.usage': 'Usage: {usage}',
-  'official.community-admin.actions.help.feature.title': 'Do As',
+  'official.community-admin.actions.help.feature.title': 'Group administration',
   'official.community-admin.actions.help.feature.summary': 'Perform scoped, audited WhatsApp administration through the bot.',
   'official.community-admin.actions.help.topic.messages.title': 'Messages',
   'official.community-admin.actions.help.topic.messages.summary': 'Send, delete, pin, unpin, lock, or unlock messages.',
@@ -25,7 +25,7 @@ export const doasMessages: MessageCatalog = {
   'official.community-admin.actions.help.topic.lifecycle.title': 'Group lifecycle',
   'official.community-admin.actions.help.topic.lifecycle.summary': 'Create, leave, delete, or dismantle groups and chats.',
   'official.community-admin.actions.help.topic.lifecycle.instruction': 'Lifecycle actions are high risk; review the target and confirm before execution.',
-  'official.community-admin.actions.help.status.description': 'Show Do As settings and the bot capabilities for the selected group.',
+  'official.community-admin.actions.help.status.description': 'Show administration settings and the bot capabilities for the selected group.',
   'official.community-admin.actions.help.status.example': '/admin status',
   'official.community-admin.actions.help.lock.description': 'Restrict sending messages to group admins.',
   'official.community-admin.actions.help.lock.example': '/admin lock maintenance window',

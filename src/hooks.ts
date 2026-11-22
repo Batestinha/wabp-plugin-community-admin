@@ -171,7 +171,8 @@ async function counterViolations(context: HookContext, config: ModerationConfig,
 
 /** Moderators an operator chose are trusted like group admins: automatic rules never act on them. */
 async function isModerator(context: HookContext, scopeId: string, member: Member): Promise<boolean> {
-  return Boolean((await moderatorIdentityIds(context, scopeId))?.has(member.identityId));
+  const holders = await moderatorIdentityIds(context, scopeId);
+  return holders === undefined || holders.has(member.identityId);
 }
 
 export async function handleParticipantChange(context: HookContext, event: PluginParticipantChangeEvent): Promise<PluginAction[] | void> {

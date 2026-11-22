@@ -26,7 +26,7 @@ export const DOAS_PERMISSIONS = {
 
 export const doasManifest: PluginManifest = {
   pluginId: DOAS_PLUGIN_ID,
-  name: 'Do As',
+  name: 'Group administration',
   author: { name: 'Batestinha' },
   kind: 'managed_group',
   version: '0.4.0',
