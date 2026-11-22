@@ -74,11 +74,12 @@ function host({ groups, config = {}, holders, now = new Date('2026-11-21T12:00:0
     protectedWidsForActions: async () => [owner.canonicalWid],
     // `holders`: the moderators a core API 0.3.26 host lists (the bot is always there, as the account owner);
     // 'throws' makes the capability fail; absent means an older host without it.
-    ...(holders === undefined ? {} : { permissionHoldersForScope: async ({ permission }) => {
+    permissionHoldersForScope: async ({ permission }) => {
       if (holders === 'throws') throw new Error('unavailable');
+      if (permission === 'plugin.community-admin.structure') return [];
       if (permission !== 'plugin.community-admin.moderate') throw new Error('not declared: ' + permission);
-      return [{ identityId: bot.identityId, via: ['owner'] }, ...holders.map(who => ({ identityId: who.identityId, via: ['exception'] }))];
-    } }),
+      return [{ identityId: bot.identityId, via: ['owner'] }, ...(holders ?? []).map(who => ({ identityId: who.identityId, via: ['exception'] }))];
+    },
     getCurrentBotWid: async () => bot.canonicalWid,
     listEnabledScopes: async () => [{ scopeId: 'scope-1', kind: 'COMMUNITY_LIKE', name: 'Climbers' }],
     enqueuePluginJob: async job => { jobs.push(job); },

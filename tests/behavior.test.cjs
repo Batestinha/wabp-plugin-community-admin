@@ -7,7 +7,7 @@ const ana = person('Ana', '351910000001');
 const rui = person('Rui', '351910000002');
 const eva = person('Eva', '351910000003');
 
-function community(config, holders) {
+function community(config, holders = [ana]) {
   const h = host({
     config,
     holders,
@@ -57,24 +57,6 @@ test('dry run only records the decision', async () => {
   assert.match(result.text, /dry run/u);
 });
 
-test('with "Also require WhatsApp admin", only admins of the community group moderate the whole community', async () => {
-  const h = community({ requireGroupAdmin: true });
-  // Eva is an admin of the main and event groups, but not of the community group itself.
-  const refused = await run(h, eva, '/admin expel spam', { groupWid: 'event@g.us', mentions: [rui] });
-  assert.match(refused.text, /Only the admins of parent@g\.us/u);
-  assert.equal(refused.pluginActions, undefined);
-});
-
-test('with "Also require WhatsApp admin", a standalone group needs no community: its own admins moderate it', async () => {
-  const h = host({ config: { requireGroupAdmin: true }, groups: [{ groupWid: 'solo@g.us', name: 'Solo', members: [[eva, true], [rui]] }] });
-  plugin.registerCommands(h.context);
-  const result = await run(h, eva, '/admin suspend 1d off-topic', { groupWid: 'solo@g.us', mentions: [rui] });
-  assert.match(result.text, /Removed from 1 group\(s\)/u);
-  assert.ok(result.pluginActions.some(action => action.type === 'group.removeParticipant' && action.groupWid === 'solo@g.us'));
-  const refused = await run(h, rui, '/admin suspend 1d revenge', { groupWid: 'solo@g.us', mentions: [eva] });
-  assert.match(refused.text, /Only the admins of solo@g\.us/u);
-});
-
 test('by default anyone the host lets run /admin moderates; nobody needs to be a WhatsApp admin', async () => {
   // Only the bot is an admin here, as in communities where people never get WhatsApp admin rights.
   const h = host({ holders: [eva], groups: [{ groupWid: 'solo@g.us', name: 'Solo', members: [[eva], [rui]] }] });
@@ -94,24 +76,12 @@ test('reports and alerts reach the moderators the host lists, never the bot, who
   assert.ok(!alerts.some(action => action.chatId === h.bot.deliveryChatId));
 });
 
-test('with "Also require WhatsApp admin", only moderators who are also admins of the authority group act and get alerts', async () => {
-  const h = community({ requireGroupAdmin: true }, [ana, eva]);
-  const refused = await run(h, eva, '/admin expel spam', { groupWid: 'event@g.us', mentions: [rui] });
-  assert.match(refused.text, /Only the admins of parent@g\.us/u);
-  const reply = { messageId: 'bad-3', snapshot: { authorWid: rui.canonicalWid, type: 'chat', body: 'spam', hasMedia: false } };
-  const report = await run(h, rui, '/report', { groupWid: 'main@g.us', replyTo: reply });
-  const alerts = report.pluginActions.filter(action => action.type === 'message.sendText' && action.chatId !== rui.deliveryChatId);
-  assert.deepEqual(alerts.map(action => action.chatId), [ana.deliveryChatId]);
-  const status = await run(h, ana, '/admin status', { groupWid: 'main@g.us' });
-  assert.match(status.text, /people allowed to moderate who are also admins of the community \(2\)/u);
-});
-
-test('when the host cannot list moderators, alerts fall back to the WhatsApp admins of the authority group', async () => {
+test('when the host cannot list moderators, reports remain private', async () => {
   const h = community({}, 'throws');
   const reply = { messageId: 'bad-4', snapshot: { authorWid: rui.canonicalWid, type: 'chat', body: 'spam', hasMedia: false } };
   const report = await run(h, eva, '/report', { groupWid: 'main@g.us', replyTo: reply });
   const alerts = report.pluginActions.filter(action => action.type === 'message.sendText' && action.chatId !== eva.deliveryChatId);
-  assert.deepEqual(alerts.map(action => action.chatId), [ana.deliveryChatId]);
+  assert.deepEqual(alerts.map(action => action.chatId), []);
 });
 
 test('moderators are never caught by automatic rules, like admins', async () => {
@@ -272,4 +242,61 @@ test('groups outside MANAGE mode are left alone', async () => {
   const h = community();
   const result = await run(h, ana, '/admin expel spam', { groupWid: 'main@g.us', mentions: [rui] });
   assert.ok(!result.pluginActions.some(action => action.type === 'group.removeParticipant' && action.groupWid === 'watch@g.us'));
+});
+
+test('Community Admin and Group Admin expose the intended grants and every route has one handler', () => {
+  const { context } = community();
+  const registered = [];
+  context.router.register = (family, action) => registered.push('/' + family + (action === '*' ? '' : ' ' + action));
+  plugin.registerCommands(context);
+  assert.equal(registered.length, new Set(registered).size);
+  assert.deepEqual([...registered].sort(), [...plugin.manifest.commands].sort());
+  const [group, communityRole] = plugin.manifest.roles;
+  assert.deepEqual(group.permissions, ['plugin.community-admin.moderate','plugin.community-admin.group-info']);
+  assert.deepEqual(communityRole.permissions, plugin.manifest.requiredPermissions);
+  assert.deepEqual(plugin.registerServices(context).map(service => service.serviceId), ['official.community-subgroups.v1']);
+  assert.deepEqual(plugin.registerAssistantTools(context).map(tool => tool.descriptor.name), [
+    'official.community-admin.participants.preview','official.community-admin.participants.execute','official.community-admin.group.execute']);
+});
+
+test('auto-approval audits each unheld request and yields to raid locks and standings', async () => {
+  const h = community({ joinApproval: { autoApprove: true } });
+  const hooks = plugin.registerHooks(h.context);
+  const now = new Date();
+  const event = { pluginId: plugin.manifest.pluginId, scopeId: 'scope-1', groupWid: 'main@g.us', managementMode: 'MANAGE',
+    receivedAt: now, eventId: 'request', chatId: 'main@g.us', action: 'membership_request', botIdentityIds: [], affectedIdentities: [rui] };
+  const approved = await hooks.onParticipantChange(event);
+  assert.ok(approved.some(action => action.type === 'group.approveMembershipRequest'));
+  assert.ok(approved.some(action => action.action === 'community-admin.join-request.approved'));
+  require('../dist/store').recordLock(h.context.databases.open('moderation'), event.groupWid, event.scopeId, new Date(now.getTime()+60000), 'raid');
+  assert.ok(!(await hooks.onParticipantChange(event)).some(action => action.type === 'group.approveMembershipRequest'));
+  h.context.memberStandingsForScope = async () => [{ identityId: rui.identityId, standing: 'suspended', caseRef: 'suspended' }];
+  const rejected = await hooks.onParticipantChange(event);
+  assert.ok(rejected.some(action => action.type === 'group.rejectMembershipRequest'));
+  assert.ok(!rejected.some(action => action.type === 'group.approveMembershipRequest'));
+});
+
+test('required join approval reconciles all managed groups and is inherited by group creation', async () => {
+  const h = community({ joinApproval: { policy: 'require', autoApprove: false } });
+  const hooks = plugin.registerHooks(h.context);
+  await hooks.onRuntimeReady({ botIdentityId: h.bot.identityId, firstReadyForIdentity: false, startupBeforeWorker: true });
+  const actions = await hooks.onPluginJob({ scopeId: 'scope-1', jobName: 'scope.configuration.changed', payload: {} });
+  assert.deepEqual(actions.map(action => action.groupWid).sort(), ['event@g.us','main@g.us','parent@g.us']);
+  assert.ok(actions.every(action => action.type === 'group.setMembershipApprovalMode' && action.enabled));
+  assert.deepEqual(await hooks.onGroupScopeCovered({ scopeId: 'scope-1', chatId: 'watch@g.us', newManagementMode: 'OBSERVE' }), undefined);
+  const raw = await h.context.configFor('scope-1');
+  assert.equal(require('../dist/subgroups/config').parseCommunitySubgroupsConfig(raw).creationPolicy.joinApproval,true);
+});
+
+test('group information follows current membership and the observed WhatsApp edit setting', async () => {
+  const h=community();
+  h.context.explainPermission=async request=>({allowed:request.allowCurrentManagedGroupMember === true, reasons:[]});
+  h.context.getGroupMetadataSnapshot=async()=>({source:'whatsmeow.GetGroupInfo',raw:{isLocked:true}});
+  const denied=await run(h,rui,'/admin description Test',{groupWid:'main@g.us'});
+  assert.equal(denied.pluginActions,undefined);
+  h.context.getGroupMetadataSnapshot=async()=>({source:'whatsmeow.GetGroupInfo',raw:{isLocked:false}});
+  const accepted=await run(h,rui,'/admin description Test',{groupWid:'main@g.us'});
+  assert.equal(accepted.pluginActions[0].description,'Test');
+  h.context.explainPermission=async()=>({allowed:false,reasons:[]});
+  assert.equal((await run(h,rui,'/admin description Test',{groupWid:'main@g.us'})).pluginActions,undefined);
 });

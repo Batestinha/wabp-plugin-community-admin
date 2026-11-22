@@ -21,17 +21,6 @@ export const moderationConfigSchema = z.object({
   joinApproval: z.object({ policy: z.enum(['leave', 'require']).default('leave'), autoApprove: z.boolean().default(false) }).strict().default({}),
   /** While true, every decision is only recorded in the audit log; nothing is deleted, removed or sent. */
   dryRun: z.boolean().default(true),
-  /**
-   * Only with requireGroupAdmin: WhatsApp groups whose admins may moderate this scope. Empty means: the
-   * community parent group when the group belongs to a community, otherwise the group where the command runs.
-   */
-  authorityGroupChatIds: chatIds,
-  /**
-   * Moderators are whoever the host lets moderate the scope (plugin.community-admin.moderate: the owner,
-   * subowners, and people an operator allows, for example on the console's Access page). When true they
-   * must also be WhatsApp admins of the authority groups, and only those get alerts.
-   */
-  requireGroupAdmin: z.boolean().default(false),
   /** Groups of the scope that this plugin never acts in. */
   exemptGroupChatIds: chatIds,
   suspension: z.object({

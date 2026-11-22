@@ -1,3 +1,4 @@
+import { protectiveTarget } from '../authority';
 import { z } from 'zod';
 import type { AssistantTool, AssistantToolContext } from '@wabs/plugin-sdk/assistant-tools';
 import { jsonSchemaForZodObject, throwIfAborted } from '@wabs/plugin-sdk/assistant-tools';
@@ -217,6 +218,17 @@ function participantExecuteTool(
         return { content: emptyExecution(t(toolContext, 'official.community-admin.actions.toolDisabled', {
           scopeId: toolContext.scopeId
         }, `DoAS is disabled for scope ${toolContext.scopeId}.`)) };
+      }
+      if (['remove', 'demote', 'reject'].includes(input.action)) {
+        const actor = requireStableIdentityAddress(toolContext.actor).identityId;
+        for (const target of input.targets) {
+          for (const wid of target.userWids) {
+            const member = await authoritativeIdentityIdForWid(pluginContext, wid);
+            if (await protectiveTarget(pluginContext, toolContext.scopeId, actor, member)) {
+              return { content: emptyExecution(t(toolContext, 'official.community-admin.protectedMember', {}, 'Protected member.')) };
+            }
+          }
+        }
       }
       const protectedBotTarget = await destructiveBotTarget(pluginContext, input.action, input.targets);
       throwIfAborted(toolContext.signal);

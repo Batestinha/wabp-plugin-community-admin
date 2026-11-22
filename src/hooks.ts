@@ -14,7 +14,6 @@ import {
   memberById,
   memberByWid,
   nowFrom,
-  participantsOf,
   planCase,
   planRestore,
   scopeName,
@@ -28,7 +27,6 @@ import { activeCase, addWarning, caseById, isNewMember, recordJoin, recordLock, 
 type HookContext = Omit<PluginHookContext, 'listEnabledScopes'> & ModerationDeps;
 
 const ARRIVALS = new Set<PluginParticipantChangeEvent['action']>(['join', 'add', 'membership_approved']);
-const ADMIN_CACHE_SECONDS = 600;
 
 export function createModerationHooks(context: HookContext): PluginRuntimeHooks {
   return {
@@ -83,7 +81,7 @@ export async function handleMessage(context: HookContext, event: PluginMessageEv
   if (violations.length === 0) return;
 
   const member = await memberByWid(context, event.actorWid) ?? await memberById(context, event.actorIdentityId);
-  if (!member || await isProtected(context, member) || await isGroupAdmin(context, event.groupWid, member)
+  if (!member || await isProtected(context, member)
     || await isModerator(context, event.scopeId, member)) return;
 
   const t = await translator(context, event.scopeId);
@@ -174,18 +172,6 @@ async function counterViolations(context: HookContext, config: ModerationConfig,
 /** Moderators an operator chose are trusted like group admins: automatic rules never act on them. */
 async function isModerator(context: HookContext, scopeId: string, member: Member): Promise<boolean> {
   return Boolean((await moderatorIdentityIds(context, scopeId))?.has(member.identityId));
-}
-
-async function isGroupAdmin(context: HookContext, groupWid: string, member: Member): Promise<boolean> {
-  const key = `moderation:admins:${groupWid}`;
-  let admins = await context.ephemeralStore?.get(key) as string[] | undefined;
-  if (!Array.isArray(admins)) {
-    admins = (await participantsOf(context, groupWid))
-      .filter((participant) => participant.isAdmin || participant.isSuperAdmin)
-      .map((participant) => participant.wid);
-    await context.ephemeralStore?.set(key, admins, ADMIN_CACHE_SECONDS);
-  }
-  return admins.some((wid) => member.addresses.has(wid));
 }
 
 export async function handleParticipantChange(context: HookContext, event: PluginParticipantChangeEvent): Promise<PluginAction[] | void> {

@@ -1,3 +1,4 @@
+import { protectiveTarget } from './authority';
 import type { PluginAction } from '@wabs/plugin-sdk/actions';
 import type { CommandMetadata, CommandTargetSpec } from '@wabs/plugin-sdk/command-metadata';
 import type { CommandContext, CommandResult } from '@wabs/plugin-sdk/commands';
@@ -15,7 +16,6 @@ import {
 import {
   adminRecipients,
   alertActions,
-  checkAuthority,
   moderatorsOf,
   configFor,
   database,
@@ -140,12 +140,6 @@ async function prepare(deps: Deps, ctx: CommandContext): Promise<Prepared | Comm
   if (!db) return reply(ctx.t(`${ns}.unavailable`));
   const actor = actorIdentityId ? await memberById(deps, actorIdentityId) : undefined;
   if (!actor) return reply(ctx.t(`${ns}.unknownMember`));
-  const authority = await checkAuthority(deps, config, actor, ctx.groupWid);
-  if (!authority.ok) {
-    return reply(authority.authorityLabel
-      ? ctx.t(`${ns}.notAuthorized`, { authority: authority.authorityLabel })
-      : ctx.t(`${ns}.notAuthorizedUnknown`));
-  }
   return { scopeId, config, db, actor };
 }
 
@@ -165,15 +159,8 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
     const prepared = await prepare(deps, ctx);
     if (isResult(prepared)) return prepared;
     const { config, db, scopeId } = prepared;
-    const groupAdmins = config.authorityGroupChatIds.length
-      ? ctx.t(`${ns}.authority.configured`, { count: config.authorityGroupChatIds.length })
-      : ctx.t(`${ns}.authority.parent`);
     const moderators = await moderatorsOf(deps, scopeId);
-    const authority = !moderators
-      ? groupAdmins
-      : config.requireGroupAdmin
-        ? ctx.t(`${ns}.authority.moderatorsAndAdmins`, { count: moderators.length, admins: groupAdmins })
-        : ctx.t(`${ns}.authority.moderators`, { count: moderators.length });
+    const authority = ctx.t(ns + '.authority.moderators', { count: moderators?.length ?? 0 });
     return reply(ctx.t(`${ns}.status`, {
       state: ctx.t(`${ns}.state.${config.enabled ? 'on' : 'off'}`),
       dry: config.dryRun ? ctx.t(`${ns}.state.dry`) : '',
@@ -189,7 +176,7 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
     const { config, db, scopeId, actor } = prepared;
     const { member, rest } = await targetMember(deps, ctx);
     if (!member) return reply(ctx.t(kind === 'suspension' ? `${ns}.usage.suspend` : `${ns}.usage.expel`));
-    if (await isProtected(deps, member)) return reply(ctx.t(`${ns}.protectedMember`));
+    if (await isProtected(deps, member) || await protectiveTarget(deps, scopeId, actor.identityId, member.identityId)) return reply(ctx.t(`${ns}.protectedMember`));
     let days: number | undefined;
     let reasonWords = rest;
     if (kind === 'suspension') {
@@ -272,7 +259,7 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
     const { config, db, scopeId, actor } = prepared;
     const { member, rest } = await targetMember(deps, ctx);
     if (!member) return reply(ctx.t(`${ns}.usage.member`));
-    if (await isProtected(deps, member)) return reply(ctx.t(`${ns}.protectedMember`));
+    if (await isProtected(deps, member) || await protectiveTarget(deps, scopeId, actor.identityId, member.identityId)) return reply(ctx.t(`${ns}.protectedMember`));
     const reason = rest.join(' ').trim();
     if (!reason) return reply(ctx.t(`${ns}.reasonRequired`));
     const audit: PluginAction = { type: 'audit.record', action: 'moderation.warning.given',
@@ -372,7 +359,7 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
     }
     const author = report.author_identity_id ? await memberById(deps, report.author_identity_id) : undefined;
     if (!author) return reply(ctx.t(`${ns}.unknownMember`));
-    if (await isProtected(deps, author)) return reply(ctx.t(`${ns}.protectedMember`));
+    if (await isProtected(deps, author) || await protectiveTarget(deps, scopeId, actor.identityId, author.identityId)) return reply(ctx.t(`${ns}.protectedMember`));
     const actions: PluginAction[] = [{ type: 'audit.record', action: `moderation.report.${action}`, targetJson: { scopeId, reportId: id, identityId: author.identityId },
       metadataJson: { dryRun: config.dryRun } }];
     if (!config.dryRun) {

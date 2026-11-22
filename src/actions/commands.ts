@@ -1,3 +1,4 @@
+import { protectiveTarget } from '../authority';
 import type { CommandMetadata, CommandTargetSpec } from '@wabs/plugin-sdk/command-metadata';
 import type { CommandContext } from '@wabs/plugin-sdk/commands';
 import type { ManagedGroupCommandContext as PluginCommandContext } from '@wabs/plugin-sdk/managed-group-plugin';
@@ -521,6 +522,12 @@ export function registerDoasCommands(context: PluginCommandContext): void {
       }
 
       const actionInput = actionInputFor(ctx, actionName, parsed.args);
+      if (actionInput.userWid && ['remove', 'demote', 'reject'].includes(actionName)) {
+        const member = await context.resolveIdentityAddress?.(actionInput.userWid);
+        if (!member || await protectiveTarget(context, scopeId, doasCommandIdentityId(ctx), member.identityId)) {
+          return { handled: true, text: ctx.t('official.community-admin.protectedMember') };
+        }
+      }
       const botProtection = await botProtectionInput(context, actionName, actionInput.userWid);
       const plan = planDoasActions({
         actionName,
