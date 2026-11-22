@@ -410,7 +410,13 @@ export async function planRestore(deps: ModerationDeps, input: {
   const member = await memberById(deps, input.caseRow.identity_id);
   const covered = await scopeGroups(deps, input.scopeId, input.config);
   const wanted = new Set(removedFrom(input.caseRow));
-  const readded = covered.filter((group) => wanted.has(group.groupWid) && group.managementMode === 'MANAGE');
+  const wantedGroups = covered.filter((group) => wanted.has(group.groupWid) && group.managementMode === 'MANAGE');
+  // Re-adding someone to a subgroup makes WhatsApp put them back in the community as well; adding them to the
+  // community group too is refused (409, already a member). Only add there when no subgroup is re-added.
+  const community = await deps.communityGroupWidForScope?.(input.scopeId).catch(() => undefined);
+  const readded = community && wantedGroups.some((group) => group.groupWid !== community)
+    ? wantedGroups.filter((group) => group.groupWid !== community)
+    : wantedGroups;
   const audit: PluginAction = {
     type: 'audit.record',
     action: `moderation.${input.caseRow.kind}.${input.config.dryRun ? 'restore-planned' : input.status}`,

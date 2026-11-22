@@ -8,7 +8,7 @@
   },
   "description": "Suspend or expel members, take member reports, stop spam and raids, and apply group etiquette rules, for communities and standalone groups.",
   "kind": "managed_group",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "coreApiRange": "^0.3.24",
   "entrypoint": "dist/index.js",
   "messageNamespace": "official.moderation",
@@ -32,7 +32,7 @@
   "help": {
     "featureId": "moderation",
     "titleKey": "official.moderation.help.feature.title",
-    "summaryKey": "official.moderation.help.feature.summary",
+    "summaryKey": "official.moderation.help.feature.summaryNeutral",
     "order": 80,
     "aliases": [
       "moderation",
@@ -86,13 +86,13 @@
       {
         "topicId": "report-message",
         "titleKey": "official.moderation.help.report.title",
-        "summaryKey": "official.moderation.help.report.summary",
+        "summaryKey": "official.moderation.help.report.summaryModerators",
         "order": 20,
         "commands": [
           "/report"
         ],
         "instructionKeys": [
-          "official.moderation.help.report.instruction"
+          "official.moderation.help.report.instructionModerators"
         ],
         "exampleKeys": [
           "official.moderation.help.report.example"

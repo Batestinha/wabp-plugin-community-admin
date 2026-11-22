@@ -89,7 +89,7 @@ const REPORT_COMMAND: CommandMetadata = {
     familyKey: `${ns}.help.family`,
     featureId: 'moderation',
     topicId: 'report-message',
-    descriptionKey: `${ns}.help.cmd.report`,
+    descriptionKey: `${ns}.help.cmd.reportModerators`,
     usage: '/report',
     exampleKeys: [`${ns}.help.report.example`]
   }
@@ -281,7 +281,7 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
     const count = addWarning(db, { scopeId, identityId: member.identityId, source: 'admin', reason, actorIdentityId: actor.identityId, now: nowFrom(deps), ttlDays: config.warnings.ttlDays });
     const noticeT = await memberTranslator(deps, member.identityId, scopeId, ctx.t);
     const actions: PluginAction[] = [audit,
-      { type: 'message.sendText', chatId: member.deliveryChatId, text: noticeT(`${ns}.notice.warned`, { member: member.label, reason }) }];
+      { type: 'message.sendText', chatId: member.deliveryChatId, text: noticeT(`${ns}.notice.warnedModerators`, { member: member.label, reason }) }];
     if (count >= config.warnings.alertAt) {
       actions.push(...alertActions(await adminRecipients(deps, config, scopeId, ctx.groupWid), ctx.t(`${ns}.alert.warningLimit`, { member: member.label, count })));
     }
@@ -382,7 +382,7 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
       if (action === 'warn') {
         addWarning(db, { scopeId, identityId: author.identityId, source: 'report', reason: `report #${id}`, actorIdentityId: actor.identityId, now, ttlDays: config.warnings.ttlDays });
         const noticeT = await memberTranslator(deps, author.identityId, scopeId, ctx.t);
-        actions.push({ type: 'message.sendText', chatId: author.deliveryChatId, text: noticeT(`${ns}.notice.warned`, { member: author.label, reason: `report #${id}` }) });
+        actions.push({ type: 'message.sendText', chatId: author.deliveryChatId, text: noticeT(`${ns}.notice.warnedModerators`, { member: author.label, reason: `report #${id}` }) });
       }
       if (action === 'suspend' || action === 'expel') {
         const plan = await planCase(deps, { db, config, scopeId, scopeLabel: await scopeName(deps, scopeId), member: author,
@@ -410,7 +410,7 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
       scopeId, groupWid: ctx.groupWid, messageId: quoted.messageId, authorIdentityId: author?.identityId,
       reporterIdentityId: reporterId, excerpt: (quoted.snapshot?.body ?? '').replace(/\s+/gu, ' ').trim(), now: nowFrom(deps)
     });
-    const answer = ctx.t(created ? `${ns}.report.thanks` : `${ns}.report.duplicate`);
+    const answer = ctx.t(created ? `${ns}.report.thanksModerators` : `${ns}.report.duplicate`);
     const actions: PluginAction[] = [];
     // Keep the reporter anonymous: remove the /report message and answer privately when the group allows it.
     if (ctx.managementMode === 'MANAGE') actions.push({ type: 'message.delete', messageId: ctx.message.id, reason: `${MODERATION_PLUGIN_ID}:report-anonymity` });

@@ -199,6 +199,17 @@ test('notices name the scope even when the context lists no scopes; an expulsion
   assert.match(restored.text, /Your expulsion from Climbers has been lifted/u);
 });
 
+test('a lift re-adds to the subgroups only; WhatsApp puts the member back in the community itself', async () => {
+  const h = community();
+  h.context.communityGroupWidForScope = async () => 'parent@g.us';
+  plugin.registerCommands(h.context);
+  await run(h, ana, '/mod suspend 3d spam', { groupWid: 'main@g.us', mentions: [rui] });
+  const lifted = await run(h, ana, '/mod lift', { groupWid: 'main@g.us', mentions: [rui] });
+  const added = lifted.pluginActions.filter(action => action.type === 'group.addParticipant').map(action => action.groupWid).sort();
+  assert.deepEqual(added, ['event@g.us', 'main@g.us']);
+  assert.match(lifted.text, /Adding them back to 2 group\(s\)/u);
+});
+
 test('lift ends an expulsion on request and extend moves the end date', async () => {
   const h = community();
   await run(h, ana, '/mod expel spam', { groupWid: 'main@g.us', mentions: [eva] });

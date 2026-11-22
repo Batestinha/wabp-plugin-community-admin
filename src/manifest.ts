@@ -28,7 +28,7 @@ export const moderationManifest: PluginManifest = {
   help: {
     featureId: 'moderation',
     titleKey: `${ns}.help.feature.title`,
-    summaryKey: `${ns}.help.feature.summary`,
+    summaryKey: `${ns}.help.feature.summaryNeutral`,
     order: 80,
     aliases: ['moderation', 'moderação', 'suspend', 'expel', 'report', 'denunciar'],
     topics: [
@@ -46,10 +46,10 @@ export const moderationManifest: PluginManifest = {
       {
         topicId: 'report-message',
         titleKey: `${ns}.help.report.title`,
-        summaryKey: `${ns}.help.report.summary`,
+        summaryKey: `${ns}.help.report.summaryModerators`,
         order: 20,
         commands: ['/report'],
-        instructionKeys: [`${ns}.help.report.instruction`],
+        instructionKeys: [`${ns}.help.report.instructionModerators`],
         exampleKeys: [`${ns}.help.report.example`],
         keywords: ['report', 'spam', 'abuse', 'denunciar'],
         availability: { invocation: 'group_only', requiresCurrentManagedGroupMembership: true }
