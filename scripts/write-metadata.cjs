@@ -22,6 +22,8 @@ const metadata = {
   descriptionKey: m.descriptionKey,
   commands: m.commands,
   help: m.help,
+  roles: m.roles,
+  services: m.services,
   eventSubscriptions: m.eventSubscriptions,
   requiredPermissions: m.requiredPermissions,
   requiredBotCapabilities: m.requiredBotCapabilities,

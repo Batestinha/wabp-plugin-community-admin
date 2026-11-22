@@ -61,7 +61,7 @@ function host({ groups, config = {}, holders, now = new Date('2026-11-21T12:00:0
   const store = new Map();
   const jobs = [];
   const context = {
-    pluginId: 'official.moderation',
+    pluginId: 'official.community-admin',
     databases: registry,
     configFor: async () => ({ enabled: true, dryRun: false, ...config }),
     coveredGroupsForScope: async scopeId => groups.map(group => ({
@@ -74,11 +74,12 @@ function host({ groups, config = {}, holders, now = new Date('2026-11-21T12:00:0
     protectedWidsForActions: async () => [owner.canonicalWid],
     // `holders`: the moderators a core API 0.3.26 host lists (the bot is always there, as the account owner);
     // 'throws' makes the capability fail; absent means an older host without it.
-    ...(holders === undefined ? {} : { permissionHoldersForScope: async ({ permission }) => {
+    permissionHoldersForScope: async ({ permission }) => {
       if (holders === 'throws') throw new Error('unavailable');
-      if (permission !== 'plugin.moderation.manage') throw new Error('not declared: ' + permission);
-      return [{ identityId: bot.identityId, via: ['owner'] }, ...holders.map(who => ({ identityId: who.identityId, via: ['exception'] }))];
-    } }),
+      if (permission === 'plugin.community-admin.structure') return [];
+      if (permission !== 'plugin.community-admin.moderate') throw new Error('not declared: ' + permission);
+      return [{ identityId: bot.identityId, via: ['owner'] }, ...(holders ?? []).map(who => ({ identityId: who.identityId, via: ['exception'] }))];
+    },
     getCurrentBotWid: async () => bot.canonicalWid,
     listEnabledScopes: async () => [{ scopeId: 'scope-1', kind: 'COMMUNITY_LIKE', name: 'Climbers' }],
     enqueuePluginJob: async job => { jobs.push(job); },
@@ -94,6 +95,10 @@ function host({ groups, config = {}, holders, now = new Date('2026-11-21T12:00:0
     now: () => now
   };
   const commands = new Map();
+  context.pluginId = 'official.community-admin';
+  context.manifest = require('../dist/manifest').moderationManifest;
+  context.dataStore = { get: async key => store.get(key), set: async (key,val) => store.set(key,val), delete: async key => store.delete(key) };
+  context.flowEngine = { registerDefinitionResolver() {} };
   context.router = { register(namespace, subcommand, metadata, handler) { commands.set(`${namespace} ${subcommand}`, { metadata, handler }); } };
   return { context, db, people, participants, jobs, bot, owner, commands, setNow: value => { now = value; } };
 }

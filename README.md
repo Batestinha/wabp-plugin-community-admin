@@ -1,22 +1,11 @@
-# Moderation
+# Community Administration Assistant
 
-A WABS plugin for WABP. It keeps a scope's groups safe, whether the scope is a WhatsApp community with sub-groups or one or more standalone groups.
+Community Administration Assistant brings moderation, group administration and subgroup creation together for each managed scope. It requires WABP core API 0.3.29. WhatsApp help and responses are available in English and European Portuguese.
 
-- **Suspend** a member for a number of days. They are removed from every group the scope covers, kept out while the suspension lasts, and added back when it ends (by invitation when their privacy settings block adding).
-- **Expel** a member. They are removed from every group and kept out until a moderator lifts it.
-- **Reports:** members reply to a message with `/report`; the moderators get it privately and act with `/mod resolve`.
-- **Spam and raid shield:** invite links, unwanted links, banned phrases and floods; the only thing the bot does on its own is expel obvious spam from members who joined recently. Mass joins lock the group for a while.
-- **Etiquette rules:** sticker bursts, forwarded chains, media in chosen groups and quiet hours. All off by default.
+On the console’s Access page, assign **Group Admin** to people who moderate members and manage group information. **Community Admin** also grants group settings, structural changes and permission to send as the bot. Reports go privately to the people holding the moderation permission in that scope.
 
-Suspensions and expulsions are recorded with the host as member standings (`member.setStanding`, WABP core API 0.3.24). The host decides what a standing means for its own features; this plugin only removes, re-adds and records. Everything starts with `enabled=false` and `dryRun=true`, which only writes decisions to the audit log.
+Members can reply to a message with `/report` and use `/group create` under the scope’s creation policy. A member may use `/admin title`, `description`, `pin` or `unpin` when WhatsApp lets all members edit group information. Administrators use `/admin` for group actions, cases, suspensions and expulsions.
 
-**Who moderates.** The moderators are the people the host allows to use `plugin.moderation.manage` in the scope. The account owner and subowners always may. Anyone else is chosen by an operator: in WABP's console, on the Access page, give the person an "always allow" for `plugin.moderation.manage` in that scope, or a role that includes it. Nobody needs to be a WhatsApp group admin.
-- Moderators get the reports and alerts privately, never the bot itself.
-- The automatic rules never act on them.
-- This needs WABP core API 0.3.26 (`permissionHoldersForScope`). On older hosts the alerts go to the WhatsApp admins of the authority groups instead.
+A suspension removes a member for its duration and then attempts to add them back. An expulsion lasts until lifted. Join approval can be required for covered groups. Automatic approval, when enabled, admits people without a hold while the raid shield is inactive. The moderation settings start with dry run enabled. The plugin retains the moderation case database and provides the subgroup creation service used by Community Events.
 
-**Also require WhatsApp admin** (`requireGroupAdmin`, off by default) adds a condition: moderators must also be WhatsApp admins of the authority groups. Those are the configured groups, otherwise the community group, otherwise the group where the command runs.
-
-The bot, its owner and subowners are never moderated.
-
-Commands: `/mod status|suspend|expel|lift|extend|cases|warn|pardon|warnings|lock|unlock|test|resolve` and `/report`. Translations: English and European Portuguese.
+Source history for Moderation, Do As and Community Subgroups is recorded in `provenance.json`. Public release archives are built by the repository’s Release standalone plugin workflow.

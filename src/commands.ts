@@ -1,3 +1,4 @@
+import { protectiveTarget } from './authority';
 import type { PluginAction } from '@wabs/plugin-sdk/actions';
 import type { CommandMetadata, CommandTargetSpec } from '@wabs/plugin-sdk/command-metadata';
 import type { CommandContext, CommandResult } from '@wabs/plugin-sdk/commands';
@@ -15,7 +16,6 @@ import {
 import {
   adminRecipients,
   alertActions,
-  checkAuthority,
   moderatorsOf,
   configFor,
   database,
@@ -67,10 +67,10 @@ function modCommand(subcommand: string, mutation: CommandMetadata['mutation']): 
     ...(mutation === 'durable' ? { dangerous: true } : {}),
     help: {
       familyKey: `${ns}.help.family`,
-      featureId: 'moderation',
+      featureId: 'community-admin',
       topicId: 'moderate-members',
       descriptionKey: `${ns}.help.cmd.${subcommand}`,
-      usage: `/mod ${subcommand}`,
+      usage: `/admin ${subcommand}`,
       exampleKeys: [`${ns}.help.moderate.example`]
     }
   };
@@ -87,7 +87,7 @@ const REPORT_COMMAND: CommandMetadata = {
   auditAction: 'moderation.report',
   help: {
     familyKey: `${ns}.help.family`,
-    featureId: 'moderation',
+    featureId: 'community-admin',
     topicId: 'report-message',
     descriptionKey: `${ns}.help.cmd.reportModerators`,
     usage: '/report',
@@ -129,7 +129,7 @@ interface Prepared {
   actor: Member;
 }
 
-/** Scope, configuration, storage, the acting admin and the authority check, shared by every /mod command. */
+/** Scope, configuration, storage, the acting admin and the authority check, shared by every /admin command. */
 async function prepare(deps: Deps, ctx: CommandContext): Promise<Prepared | CommandResult> {
   const scopeId = scopeOf(ctx);
   if (!scopeId) return reply(ctx.t(`${ns}.disabled`));
@@ -140,12 +140,6 @@ async function prepare(deps: Deps, ctx: CommandContext): Promise<Prepared | Comm
   if (!db) return reply(ctx.t(`${ns}.unavailable`));
   const actor = actorIdentityId ? await memberById(deps, actorIdentityId) : undefined;
   if (!actor) return reply(ctx.t(`${ns}.unknownMember`));
-  const authority = await checkAuthority(deps, config, actor, ctx.groupWid);
-  if (!authority.ok) {
-    return reply(authority.authorityLabel
-      ? ctx.t(`${ns}.notAuthorized`, { authority: authority.authorityLabel })
-      : ctx.t(`${ns}.notAuthorizedUnknown`));
-  }
   return { scopeId, config, db, actor };
 }
 
@@ -161,19 +155,12 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
   const deps = context as unknown as Deps;
   const router = context.router;
 
-  router.register('mod', 'status', modCommand('status', 'none'), async (ctx) => {
+  router.register('admin', 'status', modCommand('status', 'none'), async (ctx) => {
     const prepared = await prepare(deps, ctx);
     if (isResult(prepared)) return prepared;
     const { config, db, scopeId } = prepared;
-    const groupAdmins = config.authorityGroupChatIds.length
-      ? ctx.t(`${ns}.authority.configured`, { count: config.authorityGroupChatIds.length })
-      : ctx.t(`${ns}.authority.parent`);
     const moderators = await moderatorsOf(deps, scopeId);
-    const authority = !moderators
-      ? groupAdmins
-      : config.requireGroupAdmin
-        ? ctx.t(`${ns}.authority.moderatorsAndAdmins`, { count: moderators.length, admins: groupAdmins })
-        : ctx.t(`${ns}.authority.moderators`, { count: moderators.length });
+    const authority = ctx.t(ns + '.authority.moderators', { count: moderators?.length ?? 0 });
     return reply(ctx.t(`${ns}.status`, {
       state: ctx.t(`${ns}.state.${config.enabled ? 'on' : 'off'}`),
       dry: config.dryRun ? ctx.t(`${ns}.state.dry`) : '',
@@ -189,7 +176,7 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
     const { config, db, scopeId, actor } = prepared;
     const { member, rest } = await targetMember(deps, ctx);
     if (!member) return reply(ctx.t(kind === 'suspension' ? `${ns}.usage.suspend` : `${ns}.usage.expel`));
-    if (await isProtected(deps, member)) return reply(ctx.t(`${ns}.protectedMember`));
+    if (await isProtected(deps, member) || await protectiveTarget(deps, scopeId, actor.identityId, member.identityId)) return reply(ctx.t(`${ns}.protectedMember`));
     let days: number | undefined;
     let reasonWords = rest;
     if (kind === 'suspension') {
@@ -210,10 +197,10 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
       ? t(`${ns}.suspended`, { member: member.label, until, count: plan.removed.length, dry: dry(ctx, config) })
       : t(`${ns}.expelled`, { member: member.label, count: plan.removed.length, dry: dry(ctx, config) }), plan.actions);
   };
-  router.register('mod', 'suspend', modCommand('suspend', 'durable'), startCase('suspension'));
-  router.register('mod', 'expel', modCommand('expel', 'durable'), startCase('expulsion'));
+  router.register('admin', 'suspend', modCommand('suspend', 'durable'), startCase('suspension'));
+  router.register('admin', 'expel', modCommand('expel', 'durable'), startCase('expulsion'));
 
-  router.register('mod', 'lift', modCommand('lift', 'durable'), async (ctx) => {
+  router.register('admin', 'lift', modCommand('lift', 'durable'), async (ctx) => {
     const prepared = await prepare(deps, ctx);
     if (isResult(prepared)) return prepared;
     const { config, db, scopeId } = prepared;
@@ -227,7 +214,7 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
     }), plan.actions);
   });
 
-  router.register('mod', 'extend', modCommand('extend', 'durable'), async (ctx) => {
+  router.register('admin', 'extend', modCommand('extend', 'durable'), async (ctx) => {
     const prepared = await prepare(deps, ctx);
     if (isResult(prepared)) return prepared;
     const { config, db, scopeId } = prepared;
@@ -248,7 +235,7 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
     ]);
   });
 
-  router.register('mod', 'cases', modCommand('cases', 'none'), async (ctx) => {
+  router.register('admin', 'cases', modCommand('cases', 'none'), async (ctx) => {
     const prepared = await prepare(deps, ctx);
     if (isResult(prepared)) return prepared;
     const rows = listActiveCases(prepared.db, prepared.scopeId);
@@ -266,13 +253,13 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
     return reply(lines.join('\n'));
   });
 
-  router.register('mod', 'warn', modCommand('warn', 'durable'), async (ctx) => {
+  router.register('admin', 'warn', modCommand('warn', 'durable'), async (ctx) => {
     const prepared = await prepare(deps, ctx);
     if (isResult(prepared)) return prepared;
     const { config, db, scopeId, actor } = prepared;
     const { member, rest } = await targetMember(deps, ctx);
     if (!member) return reply(ctx.t(`${ns}.usage.member`));
-    if (await isProtected(deps, member)) return reply(ctx.t(`${ns}.protectedMember`));
+    if (await isProtected(deps, member) || await protectiveTarget(deps, scopeId, actor.identityId, member.identityId)) return reply(ctx.t(`${ns}.protectedMember`));
     const reason = rest.join(' ').trim();
     if (!reason) return reply(ctx.t(`${ns}.reasonRequired`));
     const audit: PluginAction = { type: 'audit.record', action: 'moderation.warning.given',
@@ -288,7 +275,7 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
     return reply(ctx.t(`${ns}.warned`, { member: member.label, count, dry: '' }), actions);
   });
 
-  router.register('mod', 'pardon', modCommand('pardon', 'durable'), async (ctx) => {
+  router.register('admin', 'pardon', modCommand('pardon', 'durable'), async (ctx) => {
     const prepared = await prepare(deps, ctx);
     if (isResult(prepared)) return prepared;
     const { member, rest } = await targetMember(deps, ctx);
@@ -298,7 +285,7 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
     return reply(ctx.t(`${ns}.pardoned`, { member: member.label, count }));
   });
 
-  router.register('mod', 'warnings', modCommand('warnings', 'none'), async (ctx) => {
+  router.register('admin', 'warnings', modCommand('warnings', 'none'), async (ctx) => {
     const prepared = await prepare(deps, ctx);
     if (isResult(prepared)) return prepared;
     const { member } = await targetMember(deps, ctx);
@@ -310,7 +297,7 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
     }))].join('\n'));
   });
 
-  router.register('mod', 'lock', modCommand('lock', 'durable'), async (ctx) => {
+  router.register('admin', 'lock', modCommand('lock', 'durable'), async (ctx) => {
     const prepared = await prepare(deps, ctx);
     if (isResult(prepared)) return prepared;
     if (!ctx.groupWid) return reply(ctx.t(`${ns}.usage.lock`));
@@ -331,7 +318,7 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
     return reply(text, actions);
   });
 
-  router.register('mod', 'unlock', modCommand('unlock', 'durable'), async (ctx) => {
+  router.register('admin', 'unlock', modCommand('unlock', 'durable'), async (ctx) => {
     const prepared = await prepare(deps, ctx);
     if (isResult(prepared)) return prepared;
     if (!ctx.groupWid) return reply(ctx.t(`${ns}.usage.lock`));
@@ -342,7 +329,7 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
     return reply(ctx.t(`${ns}.unlocked`, { dry: '' }), [audit, { type: 'group.unlockMessages', groupWid: ctx.groupWid, reason: `${MODERATION_PLUGIN_ID}:manual` }]);
   });
 
-  router.register('mod', 'test', modCommand('test', 'none'), async (ctx) => {
+  router.register('admin', 'test', modCommand('test', 'none'), async (ctx) => {
     const prepared = await prepare(deps, ctx);
     if (isResult(prepared)) return prepared;
     const text = ctx.command.rawArgs.trim();
@@ -354,7 +341,7 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
       : ctx.t(`${ns}.test.hit`, { rules: violations.map((violation) => `${ctx.t(`${ns}.rule.${violation.source}`)} (${violation.policy})`).join(', ') }));
   });
 
-  router.register('mod', 'resolve', modCommand('resolve', 'durable'), async (ctx) => {
+  router.register('admin', 'resolve', modCommand('resolve', 'durable'), async (ctx) => {
     const prepared = await prepare(deps, ctx);
     if (isResult(prepared)) return prepared;
     const { config, db, scopeId, actor } = prepared;
@@ -372,7 +359,7 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
     }
     const author = report.author_identity_id ? await memberById(deps, report.author_identity_id) : undefined;
     if (!author) return reply(ctx.t(`${ns}.unknownMember`));
-    if (await isProtected(deps, author)) return reply(ctx.t(`${ns}.protectedMember`));
+    if (await isProtected(deps, author) || await protectiveTarget(deps, scopeId, actor.identityId, author.identityId)) return reply(ctx.t(`${ns}.protectedMember`));
     const actions: PluginAction[] = [{ type: 'audit.record', action: `moderation.report.${action}`, targetJson: { scopeId, reportId: id, identityId: author.identityId },
       metadataJson: { dryRun: config.dryRun } }];
     if (!config.dryRun) {

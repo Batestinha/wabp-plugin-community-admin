@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { communitySubgroupCreationPolicySchema } from './subgroups/creationPolicy';
 
 /** off: ignore; audit: record only; warn: warn the author; delete: remove the message; delete-and-warn: both. */
 export const rulePolicySchema = z.enum(['off', 'audit', 'warn', 'delete', 'delete-and-warn']);
@@ -10,28 +11,23 @@ const clock = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/u, 'use HH:MM');
 
 export const moderationConfigSchema = z.object({
   enabled: z.boolean().default(false),
+  requireConfirmForHighRisk: z.boolean().default(true),
+  fanout: z.object({
+    enabled: z.boolean().default(false), requireExplicitFlag: z.boolean().default(true),
+    maxTargets: z.number().int().positive().max(250).default(25), includeParentByDefault: z.boolean().default(false)
+  }).strict().default({}),
+  maxParticipants: z.number().int().min(1).max(256).default(128),
+  creationPolicy: communitySubgroupCreationPolicySchema,
+  joinApproval: z.object({ policy: z.enum(['leave', 'require']).default('leave'), autoApprove: z.boolean().default(false) }).strict().default({}),
   /** While true, every decision is only recorded in the audit log; nothing is deleted, removed or sent. */
   dryRun: z.boolean().default(true),
-  /**
-   * Only with requireGroupAdmin: WhatsApp groups whose admins may moderate this scope. Empty means: the
-   * community parent group when the group belongs to a community, otherwise the group where the command runs.
-   */
-  authorityGroupChatIds: chatIds,
-  /**
-   * Moderators are whoever the host lets moderate the scope (plugin.moderation.manage: the owner,
-   * subowners, and people an operator allows, for example on the console's Access page). When true they
-   * must also be WhatsApp admins of the authority groups, and only those get alerts.
-   */
-  requireGroupAdmin: z.boolean().default(false),
   /** Groups of the scope that this plugin never acts in. */
   exemptGroupChatIds: chatIds,
   suspension: z.object({
     defaultDays: z.number().int().min(1).max(365).default(7),
     maxDays: z.number().int().min(1).max(3650).default(365),
     /** Extra operator text appended to the private suspension notice, for example where to read the chat history. */
-    noticeExtra: z.string().max(1000).default(''),
-    /** Remove and reject anyone with an active case who tries to rejoin a covered group. */
-    rejoinGuard: z.boolean().default(true)
+    noticeExtra: z.string().max(1000).default('')
   }).strict().default({}),
   expulsion: z.object({
     noticeExtra: z.string().max(1000).default('')

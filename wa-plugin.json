@@ -1,38 +1,73 @@
 {
   "schemaVersion": 2,
-  "pluginId": "official.moderation",
-  "name": "Moderation",
+  "pluginId": "official.community-admin",
+  "name": "Community Administration Assistant",
   "author": {
     "name": "Batestinha",
     "url": "https://github.com/Batestinha"
   },
-  "description": "Suspend or expel members, take member reports, stop spam and raids, and apply group etiquette rules, for communities and standalone groups.",
+  "description": "Community administration, member reports, group creation and moderation under scoped administrator roles.",
   "kind": "managed_group",
-  "version": "0.2.2",
-  "coreApiRange": "^0.3.24",
+  "version": "1.0.0",
+  "coreApiRange": "^0.3.29",
   "entrypoint": "dist/index.js",
-  "messageNamespace": "official.moderation",
-  "descriptionKey": "official.moderation.description",
+  "messageNamespace": "official.community-admin",
+  "descriptionKey": "official.community-admin.description",
   "commands": [
-    "/mod status",
-    "/mod suspend",
-    "/mod expel",
-    "/mod lift",
-    "/mod extend",
-    "/mod cases",
-    "/mod warn",
-    "/mod pardon",
-    "/mod warnings",
-    "/mod lock",
-    "/mod unlock",
-    "/mod test",
-    "/mod resolve",
-    "/report"
+    "/admin status",
+    "/admin suspend",
+    "/admin expel",
+    "/admin lift",
+    "/admin extend",
+    "/admin cases",
+    "/admin warn",
+    "/admin pardon",
+    "/admin warnings",
+    "/admin lock",
+    "/admin unlock",
+    "/admin test",
+    "/admin resolve",
+    "/report",
+    "/admin delete",
+    "/admin pin",
+    "/admin unpin",
+    "/admin send",
+    "/admin send-media",
+    "/admin send-document",
+    "/admin approve",
+    "/admin reject",
+    "/admin add",
+    "/admin add-history",
+    "/admin remove",
+    "/admin promote",
+    "/admin demote",
+    "/admin title",
+    "/admin description",
+    "/admin picture",
+    "/admin picture-clear",
+    "/admin info-lock",
+    "/admin info-unlock",
+    "/admin member-add",
+    "/admin join-approval",
+    "/admin disappearing",
+    "/admin report-to-admin",
+    "/admin invite-link",
+    "/admin revoke-invite",
+    "/admin unlink-community",
+    "/admin leave",
+    "/admin create-group",
+    "/admin delete-chat",
+    "/admin create-community",
+    "/admin subgroup",
+    "/admin community-group-create",
+    "/admin dismantle-group",
+    "/admin dismantle-community",
+    "/group create"
   ],
   "help": {
-    "featureId": "moderation",
-    "titleKey": "official.moderation.help.feature.title",
-    "summaryKey": "official.moderation.help.feature.summaryNeutral",
+    "featureId": "community-admin",
+    "titleKey": "official.community-admin.help.feature.title",
+    "summaryKey": "official.community-admin.help.feature.summaryNeutral",
     "order": 80,
     "aliases": [
       "moderation",
@@ -44,30 +79,246 @@
     ],
     "topics": [
       {
-        "topicId": "moderate-members",
-        "titleKey": "official.moderation.help.moderate.title",
-        "summaryKey": "official.moderation.help.moderate.summary",
+        "topicId": "messages",
+        "titleKey": "official.community-admin.actions.help.topic.messages.title",
+        "summaryKey": "official.community-admin.actions.help.topic.messages.summary",
         "order": 10,
         "commands": [
-          "/mod status",
-          "/mod suspend",
-          "/mod expel",
-          "/mod lift",
-          "/mod extend",
-          "/mod cases",
-          "/mod warn",
-          "/mod pardon",
-          "/mod warnings",
-          "/mod lock",
-          "/mod unlock",
-          "/mod test",
-          "/mod resolve"
+          "/admin lock",
+          "/admin unlock",
+          "/admin delete",
+          "/admin pin",
+          "/admin unpin",
+          "/admin send",
+          "/admin send-media",
+          "/admin send-document"
         ],
         "instructionKeys": [
-          "official.moderation.help.moderate.instruction"
+          "official.community-admin.actions.help.topic.messages.instruction"
+        ],
+        "keywords": [
+          "message",
+          "send",
+          "delete",
+          "pin",
+          "lock"
+        ]
+      },
+      {
+        "topicId": "members",
+        "titleKey": "official.community-admin.actions.help.topic.members.title",
+        "summaryKey": "official.community-admin.actions.help.topic.members.summary",
+        "order": 20,
+        "commands": [
+          "/admin approve",
+          "/admin reject",
+          "/admin add",
+          "/admin add-history",
+          "/admin remove",
+          "/admin promote",
+          "/admin demote",
+          "/admin member-add",
+          "/admin join-approval"
+        ],
+        "instructionKeys": [
+          "official.community-admin.actions.help.topic.members.instruction"
+        ],
+        "keywords": [
+          "member",
+          "participant",
+          "approve",
+          "remove",
+          "admin"
+        ]
+      },
+      {
+        "topicId": "settings",
+        "titleKey": "official.community-admin.actions.help.topic.settings.title",
+        "summaryKey": "official.community-admin.actions.help.topic.settings.summary",
+        "order": 30,
+        "commands": [
+          "/admin status",
+          "/admin title",
+          "/admin description",
+          "/admin picture",
+          "/admin picture-clear",
+          "/admin info-lock",
+          "/admin info-unlock",
+          "/admin disappearing",
+          "/admin report-to-admin"
+        ],
+        "instructionKeys": [
+          "official.community-admin.actions.help.topic.settings.instruction"
+        ],
+        "keywords": [
+          "settings",
+          "profile",
+          "subject",
+          "description",
+          "privacy"
+        ]
+      },
+      {
+        "topicId": "invites",
+        "titleKey": "official.community-admin.actions.help.topic.invites.title",
+        "summaryKey": "official.community-admin.actions.help.topic.invites.summary",
+        "order": 40,
+        "commands": [
+          "/admin invite-link",
+          "/admin revoke-invite"
+        ],
+        "instructionKeys": [
+          "official.community-admin.actions.help.topic.invites.instruction"
+        ],
+        "keywords": [
+          "invite",
+          "link",
+          "revoke"
+        ]
+      },
+      {
+        "topicId": "communities",
+        "titleKey": "official.community-admin.actions.help.topic.communities.title",
+        "summaryKey": "official.community-admin.actions.help.topic.communities.summary",
+        "order": 50,
+        "commands": [
+          "/admin unlink-community",
+          "/admin create-community",
+          "/admin subgroup",
+          "/admin community-group-create",
+          "/admin dismantle-community"
+        ],
+        "instructionKeys": [
+          "official.community-admin.actions.help.topic.communities.instruction"
+        ],
+        "keywords": [
+          "community",
+          "child group",
+          "unlink",
+          "create"
+        ]
+      },
+      {
+        "topicId": "lifecycle",
+        "titleKey": "official.community-admin.actions.help.topic.lifecycle.title",
+        "summaryKey": "official.community-admin.actions.help.topic.lifecycle.summary",
+        "order": 60,
+        "commands": [
+          "/admin leave",
+          "/admin create-group",
+          "/admin delete-chat",
+          "/admin dismantle-group"
+        ],
+        "instructionKeys": [
+          "official.community-admin.actions.help.topic.lifecycle.instruction"
+        ],
+        "keywords": [
+          "group",
+          "create",
+          "leave",
+          "delete",
+          "dismantle"
+        ]
+      },
+      {
+        "topicId": "create-subgroup",
+        "titleKey": "official.community-admin.subgroups.help.create.title",
+        "summaryKey": "official.community-admin.subgroups.help.create.summary",
+        "order": 10,
+        "commands": [
+          "/group create"
+        ],
+        "instructionKeys": [
+          "official.community-admin.subgroups.help.create.instruction"
         ],
         "exampleKeys": [
-          "official.moderation.help.moderate.example"
+          "official.community-admin.subgroups.help.create.example"
+        ],
+        "keywords": [
+          "create",
+          "child group",
+          "members"
+        ],
+        "availability": {
+          "invocation": "group_only",
+          "requiredAccessPlane": "group_member"
+        }
+      },
+      {
+        "topicId": "edit-subgroup",
+        "titleKey": "official.community-admin.subgroups.help.edit.title",
+        "summaryKey": "official.community-admin.subgroups.help.edit.summary",
+        "order": 20,
+        "commands": [
+          "/admin title",
+          "/admin description"
+        ],
+        "instructionKeys": [
+          "official.community-admin.subgroups.help.edit.instruction"
+        ],
+        "exampleKeys": [
+          "official.community-admin.subgroups.help.title.example"
+        ],
+        "keywords": [
+          "title",
+          "description",
+          "rename"
+        ],
+        "availability": {
+          "invocation": "group_only",
+          "requiredAccessPlane": "group_member"
+        }
+      },
+      {
+        "topicId": "pin-messages",
+        "titleKey": "official.community-admin.subgroups.help.pin.title",
+        "summaryKey": "official.community-admin.subgroups.help.pin.summary",
+        "order": 30,
+        "commands": [
+          "/admin pin",
+          "/admin unpin"
+        ],
+        "instructionKeys": [
+          "official.community-admin.subgroups.help.pin.instruction"
+        ],
+        "exampleKeys": [
+          "official.community-admin.subgroups.help.pin.example"
+        ],
+        "keywords": [
+          "pin",
+          "unpin",
+          "message"
+        ],
+        "availability": {
+          "invocation": "group_only",
+          "requiredAccessPlane": "group_member"
+        }
+      },
+      {
+        "topicId": "moderate-members",
+        "titleKey": "official.community-admin.help.moderate.title",
+        "summaryKey": "official.community-admin.help.moderate.summary",
+        "order": 10,
+        "commands": [
+          "/admin status",
+          "/admin suspend",
+          "/admin expel",
+          "/admin lift",
+          "/admin extend",
+          "/admin cases",
+          "/admin warn",
+          "/admin pardon",
+          "/admin warnings",
+          "/admin lock",
+          "/admin unlock",
+          "/admin test",
+          "/admin resolve"
+        ],
+        "instructionKeys": [
+          "official.community-admin.help.moderate.instruction"
+        ],
+        "exampleKeys": [
+          "official.community-admin.help.moderate.example"
         ],
         "keywords": [
           "suspend",
@@ -80,22 +331,22 @@
         ],
         "availability": {
           "invocation": "either",
-          "permission": "plugin.moderation.manage"
+          "permission": "plugin.community-admin.moderate"
         }
       },
       {
         "topicId": "report-message",
-        "titleKey": "official.moderation.help.report.title",
-        "summaryKey": "official.moderation.help.report.summaryModerators",
+        "titleKey": "official.community-admin.help.report.title",
+        "summaryKey": "official.community-admin.help.report.summaryModerators",
         "order": 20,
         "commands": [
           "/report"
         ],
         "instructionKeys": [
-          "official.moderation.help.report.instructionModerators"
+          "official.community-admin.help.report.instructionModerators"
         ],
         "exampleKeys": [
-          "official.moderation.help.report.example"
+          "official.community-admin.help.report.example"
         ],
         "keywords": [
           "report",
@@ -110,13 +361,68 @@
       }
     ]
   },
+  "roles": [
+    {
+      "key": "group-admin",
+      "labelKey": "official.community-admin.role.group.label",
+      "descriptionKey": "official.community-admin.role.group.description",
+      "permissions": [
+        "plugin.community-admin.moderate",
+        "plugin.community-admin.group-info"
+      ]
+    },
+    {
+      "key": "community-admin",
+      "labelKey": "official.community-admin.role.community.label",
+      "descriptionKey": "official.community-admin.role.community.description",
+      "permissions": [
+        "plugin.community-admin.moderate",
+        "plugin.community-admin.group-info",
+        "plugin.community-admin.group-settings",
+        "plugin.community-admin.structure",
+        "plugin.community-admin.send"
+      ]
+    }
+  ],
+  "services": [
+    {
+      "serviceId": "official.community-subgroups.v1",
+      "methods": [
+        {
+          "name": "createManagedSubgroupCandidate",
+          "access": "mutation",
+          "timeoutMs": 120000
+        },
+        {
+          "name": "reconcileManagedSubgroupCreator",
+          "access": "mutation",
+          "timeoutMs": 120000
+        },
+        {
+          "name": "configureManagedSubgroup",
+          "access": "mutation",
+          "timeoutMs": 120000
+        },
+        {
+          "name": "completeManagedSubgroup",
+          "access": "mutation",
+          "timeoutMs": 120000
+        }
+      ]
+    }
+  ],
   "eventSubscriptions": [
     "message",
     "participant.change",
+    "group.scope.covered",
     "plugin.job"
   ],
   "requiredPermissions": [
-    "plugin.moderation.manage"
+    "plugin.community-admin.moderate",
+    "plugin.community-admin.group-info",
+    "plugin.community-admin.group-settings",
+    "plugin.community-admin.structure",
+    "plugin.community-admin.send"
   ],
   "requiredBotCapabilities": [],
   "dangerousActions": [
@@ -128,11 +434,37 @@
     "group.unlockMessages",
     "group.revokeInvite",
     "member.setStanding",
-    "member.clearStanding"
+    "member.clearStanding",
+    "message.pin",
+    "message.unpin",
+    "group.addParticipantsWithHistory",
+    "group.promoteParticipant",
+    "group.demoteParticipant",
+    "group.lockInfo",
+    "group.unlockInfo",
+    "group.setSubject",
+    "group.setDescription",
+    "group.setAddMembersAdminsOnly",
+    "group.setMembershipApprovalMode",
+    "group.setDisappearingMessages",
+    "group.setReportToAdminMode",
+    "group.setPicture",
+    "group.deletePicture",
+    "group.approveMembershipRequest",
+    "community.unlinkGroup",
+    "group.leave",
+    "group.create",
+    "community.create",
+    "community.createChildGroup",
+    "community.setGroupCreateEveryoneAllowed",
+    "group.dismantle",
+    "community.dismantle",
+    "chat.delete"
   ],
   "backgroundJobs": [
     "suspension.end",
-    "lock.expire"
+    "lock.expire",
+    "scope.configuration.changed"
   ],
   "databases": [
     {
@@ -144,7 +476,48 @@
   ],
   "dataVersion": "1",
   "cancellation": {
-    "workflows": []
+    "workflows": [
+      {
+        "id": "subgroup-create",
+        "description": "Guided subgroup creation before the managed group is created.",
+        "mode": "core-flow",
+        "scope": "actor-chat",
+        "commands": [
+          "/group create"
+        ],
+        "cancellableStates": [
+          "active"
+        ],
+        "terminalStates": [
+          "completed",
+          "cancelled",
+          "expired"
+        ],
+        "effects": [
+          "discard-subgroup-draft"
+        ]
+      },
+      {
+        "id": "pin-duration",
+        "description": "Guided pin-duration choice before a quoted message is pinned.",
+        "mode": "core-flow",
+        "scope": "actor-chat",
+        "commands": [
+          "/admin pin"
+        ],
+        "cancellableStates": [
+          "active"
+        ],
+        "terminalStates": [
+          "completed",
+          "cancelled",
+          "expired"
+        ],
+        "effects": [
+          "discard-pin-draft"
+        ]
+      }
+    ]
   },
   "dependencies": [],
   "assistant": {
@@ -170,10 +543,10 @@
         "intent": "moderation_case",
         "description": "Suspend, expel, lift or extend.",
         "commands": [
-          "/mod suspend",
-          "/mod expel",
-          "/mod lift",
-          "/mod extend"
+          "/admin suspend",
+          "/admin expel",
+          "/admin lift",
+          "/admin extend"
         ]
       },
       {
@@ -181,16 +554,16 @@
         "description": "Report a message, or act on a report.",
         "commands": [
           "/report",
-          "/mod resolve"
+          "/admin resolve"
         ]
       },
       {
         "intent": "moderation_status",
         "description": "Show settings, cases and warnings.",
         "commands": [
-          "/mod status",
-          "/mod cases",
-          "/mod warnings"
+          "/admin status",
+          "/admin cases",
+          "/admin warnings"
         ]
       }
     ]
@@ -200,14 +573,26 @@
   "operatorConsole": {
     "configPaths": [
       "enabled",
+      "requireConfirmForHighRisk",
+      "fanout.enabled",
+      "fanout.requireExplicitFlag",
+      "fanout.maxTargets",
+      "fanout.includeParentByDefault",
+      "maxParticipants",
+      "creationPolicy.infoEditPermission",
+      "creationPolicy.sendMessagesPermission",
+      "creationPolicy.memberAddPermission",
+      "creationPolicy.joinApproval",
+      "creationPolicy.disappearingMessages",
+      "creationPolicy.parentGroupCreatePermission",
+      "creationPolicy.parentMemberAddPermission",
+      "joinApproval.policy",
+      "joinApproval.autoApprove",
       "dryRun",
-      "authorityGroupChatIds",
-      "requireGroupAdmin",
       "exemptGroupChatIds",
       "suspension.defaultDays",
       "suspension.maxDays",
       "suspension.noticeExtra",
-      "suspension.rejoinGuard",
       "expulsion.noticeExtra",
       "reports.enabled",
       "warnings.ttlDays",
@@ -245,29 +630,420 @@
     ],
     "controls": [
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.enabled",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.enabled",
         "path": "enabled",
         "label": "Enabled",
-        "description": "Turn moderation on for this scope.",
-        "section": "Moderation",
+        "description": "Enable the assistant here. Assign Group Admin and Community Admin on the Access page.",
+        "section": "People and roles",
         "order": 10,
         "schema": {
           "type": "boolean"
         },
         "ui": {
           "widget": "toggle",
-          "helpText": "Turn moderation on for this scope."
+          "helpText": "Enable the assistant here. Assign Group Admin and Community Admin on the Access page."
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.dryRun",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.joinApproval.policy",
+        "path": "joinApproval.policy",
+        "label": "Require approval in every group",
+        "description": "Apply to existing and newly created managed groups.",
+        "section": "Join approval",
+        "order": 20,
+        "schema": {
+          "type": "enum",
+          "enum": [
+            {
+              "value": "leave",
+              "label": "Keep existing settings"
+            },
+            {
+              "value": "require",
+              "label": "Require approval"
+            }
+          ]
+        },
+        "ui": {
+          "widget": "select",
+          "helpText": "Apply to existing and newly created managed groups."
+        }
+      },
+      {
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.joinApproval.autoApprove",
+        "path": "joinApproval.autoApprove",
+        "label": "Automatically approve other members",
+        "description": "Approve requests from members without a hold while no raid lock is active.",
+        "section": "Join approval",
+        "order": 30,
+        "schema": {
+          "type": "boolean"
+        },
+        "ui": {
+          "widget": "toggle",
+          "helpText": "Approve requests from members without a hold while no raid lock is active."
+        }
+      },
+      {
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.requireConfirmForHighRisk",
+        "path": "requireConfirmForHighRisk",
+        "label": "Confirm high-risk actions",
+        "description": "Require confirmation before high-risk admin actions.",
+        "section": "Admin actions",
+        "order": 40,
+        "schema": {
+          "type": "boolean"
+        },
+        "ui": {
+          "widget": "toggle",
+          "helpText": "Require confirmation before high-risk admin actions."
+        }
+      },
+      {
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.fanout.enabled",
+        "path": "fanout.enabled",
+        "label": "Community-wide actions",
+        "description": "Allow authorized actions in multiple managed groups.",
+        "section": "Admin actions",
+        "order": 50,
+        "schema": {
+          "type": "boolean"
+        },
+        "ui": {
+          "widget": "toggle",
+          "helpText": "Allow authorized actions in multiple managed groups."
+        }
+      },
+      {
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.fanout.requireExplicitFlag",
+        "path": "fanout.requireExplicitFlag",
+        "label": "Require an explicit fan-out flag",
+        "description": "Require the command to select multiple groups explicitly.",
+        "section": "Admin actions",
+        "order": 60,
+        "schema": {
+          "type": "boolean"
+        },
+        "ui": {
+          "widget": "toggle",
+          "helpText": "Require the command to select multiple groups explicitly."
+        }
+      },
+      {
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.fanout.maxTargets",
+        "path": "fanout.maxTargets",
+        "label": "Maximum groups per command",
+        "description": "Limit community-wide actions to this many groups.",
+        "section": "Admin actions",
+        "order": 70,
+        "schema": {
+          "type": "number",
+          "min": 1,
+          "max": 250
+        },
+        "ui": {
+          "widget": "number",
+          "helpText": "Limit community-wide actions to this many groups."
+        }
+      },
+      {
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.fanout.includeParentByDefault",
+        "path": "fanout.includeParentByDefault",
+        "label": "Include the community parent",
+        "description": "Include the parent in a community-wide action by default.",
+        "section": "Admin actions",
+        "order": 80,
+        "schema": {
+          "type": "boolean"
+        },
+        "ui": {
+          "widget": "toggle",
+          "helpText": "Include the parent in a community-wide action by default."
+        }
+      },
+      {
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.maxParticipants",
+        "path": "maxParticipants",
+        "label": "Maximum members",
+        "description": "Maximum number of requested members in one subgroup creation flow.",
+        "section": "Group creation",
+        "order": 30,
+        "schema": {
+          "type": "number",
+          "unit": "items",
+          "min": 1,
+          "max": 256
+        },
+        "ui": {
+          "widget": "number",
+          "helpText": "Maximum number of requested members in one subgroup creation flow."
+        }
+      },
+      {
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.creationPolicy.infoEditPermission",
+        "path": "creationPolicy.infoEditPermission",
+        "label": "Edit group info",
+        "description": "Choose who can edit the new subgroup name, icon, description, and settings.",
+        "section": "Group creation",
+        "order": 110,
+        "schema": {
+          "type": "enum",
+          "enum": [
+            {
+              "value": "all_members",
+              "label": "All members"
+            },
+            {
+              "value": "admins_only",
+              "label": "Only admins"
+            }
+          ]
+        },
+        "ui": {
+          "widget": "select",
+          "options": [
+            {
+              "value": "all_members",
+              "label": "All members"
+            },
+            {
+              "value": "admins_only",
+              "label": "Only admins"
+            }
+          ],
+          "helpText": "Choose who can edit the new subgroup name, icon, description, and settings."
+        }
+      },
+      {
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.creationPolicy.sendMessagesPermission",
+        "path": "creationPolicy.sendMessagesPermission",
+        "label": "Send messages",
+        "description": "Choose whether all members or only admins can send messages in new subgroups.",
+        "section": "Group creation",
+        "order": 120,
+        "schema": {
+          "type": "enum",
+          "enum": [
+            {
+              "value": "all_members",
+              "label": "All members"
+            },
+            {
+              "value": "admins_only",
+              "label": "Only admins"
+            }
+          ]
+        },
+        "ui": {
+          "widget": "select",
+          "options": [
+            {
+              "value": "all_members",
+              "label": "All members"
+            },
+            {
+              "value": "admins_only",
+              "label": "Only admins"
+            }
+          ],
+          "helpText": "Choose whether all members or only admins can send messages in new subgroups."
+        }
+      },
+      {
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.creationPolicy.memberAddPermission",
+        "path": "creationPolicy.memberAddPermission",
+        "label": "Add members / invite links",
+        "description": "Choose who can add members and create or share invite links in new subgroups.",
+        "section": "Group creation",
+        "order": 130,
+        "schema": {
+          "type": "enum",
+          "enum": [
+            {
+              "value": "all_members",
+              "label": "All members"
+            },
+            {
+              "value": "admins_only",
+              "label": "Only admins"
+            }
+          ]
+        },
+        "ui": {
+          "widget": "select",
+          "options": [
+            {
+              "value": "all_members",
+              "label": "All members"
+            },
+            {
+              "value": "admins_only",
+              "label": "Only admins"
+            }
+          ],
+          "helpText": "Choose who can add members and create or share invite links in new subgroups."
+        }
+      },
+      {
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.creationPolicy.joinApproval",
+        "path": "creationPolicy.joinApproval",
+        "label": "Approve new members",
+        "description": "Require admins to approve new subgroup join requests.",
+        "section": "Group creation",
+        "order": 140,
+        "schema": {
+          "type": "boolean"
+        },
+        "ui": {
+          "widget": "toggle",
+          "helpText": "Require admins to approve new subgroup join requests."
+        }
+      },
+      {
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.creationPolicy.disappearingMessages",
+        "path": "creationPolicy.disappearingMessages",
+        "label": "Disappearing messages",
+        "description": "Set the disappearing-message timer for new subgroups.",
+        "section": "Group creation",
+        "order": 150,
+        "schema": {
+          "type": "enum",
+          "enum": [
+            {
+              "value": "off",
+              "label": "Off"
+            },
+            {
+              "value": "24h",
+              "label": "24 hours"
+            },
+            {
+              "value": "7d",
+              "label": "7 days"
+            },
+            {
+              "value": "90d",
+              "label": "90 days"
+            }
+          ]
+        },
+        "ui": {
+          "widget": "select",
+          "options": [
+            {
+              "value": "off",
+              "label": "Off"
+            },
+            {
+              "value": "24h",
+              "label": "24 hours"
+            },
+            {
+              "value": "7d",
+              "label": "7 days"
+            },
+            {
+              "value": "90d",
+              "label": "90 days"
+            }
+          ],
+          "helpText": "Set the disappearing-message timer for new subgroups."
+        }
+      },
+      {
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.creationPolicy.parentGroupCreatePermission",
+        "path": "creationPolicy.parentGroupCreatePermission",
+        "label": "Who can create groups",
+        "description": "Choose who can create groups in the parent community.",
+        "section": "Group creation",
+        "order": 200,
+        "schema": {
+          "type": "enum",
+          "enum": [
+            {
+              "value": "everyone",
+              "label": "Everyone"
+            },
+            {
+              "value": "community_admins",
+              "label": "Only community admins"
+            }
+          ]
+        },
+        "ui": {
+          "widget": "select",
+          "options": [
+            {
+              "value": "everyone",
+              "label": "Everyone"
+            },
+            {
+              "value": "community_admins",
+              "label": "Only community admins"
+            }
+          ],
+          "helpText": "Choose who can create groups in the parent community."
+        }
+      },
+      {
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.creationPolicy.parentMemberAddPermission",
+        "path": "creationPolicy.parentMemberAddPermission",
+        "label": "Who can add members",
+        "description": "Choose who can add new members to the parent community.",
+        "section": "Group creation",
+        "order": 210,
+        "schema": {
+          "type": "enum",
+          "enum": [
+            {
+              "value": "everyone",
+              "label": "Everyone"
+            },
+            {
+              "value": "community_admins",
+              "label": "Only community admins"
+            }
+          ]
+        },
+        "ui": {
+          "widget": "select",
+          "options": [
+            {
+              "value": "everyone",
+              "label": "Everyone"
+            },
+            {
+              "value": "community_admins",
+              "label": "Only community admins"
+            }
+          ],
+          "helpText": "Choose who can add new members to the parent community."
+        }
+      },
+      {
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.dryRun",
         "path": "dryRun",
         "label": "Dry run",
         "description": "Only record what would happen in the audit log; nothing is deleted, removed or sent.",
-        "section": "Moderation",
-        "order": 20,
+        "section": "People and roles",
+        "order": 90,
         "schema": {
           "type": "boolean"
         },
@@ -277,48 +1053,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.requireGroupAdmin",
-        "path": "requireGroupAdmin",
-        "label": "Also require WhatsApp admin",
-        "description": "Moderators are the people allowed to moderate this scope: on the Access page, give them an \"always allow\" for plugin.moderation.manage in this scope (the account owner and subowners always may). They get the reports and alerts. Turn this on to also require them to be WhatsApp admins of the authority groups.",
-        "section": "Moderation",
-        "order": 30,
-        "schema": {
-          "type": "boolean"
-        },
-        "ui": {
-          "widget": "toggle",
-          "helpText": "Moderators are the people allowed to moderate this scope: on the Access page, give them an \"always allow\" for plugin.moderation.manage in this scope (the account owner and subowners always may). They get the reports and alerts. Turn this on to also require them to be WhatsApp admins of the authority groups."
-        }
-      },
-      {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.authorityGroupChatIds",
-        "path": "authorityGroupChatIds",
-        "label": "Authority groups",
-        "description": "Only with \"Also require WhatsApp admin\": groups whose WhatsApp admins may moderate. Empty: the community group when there is one, otherwise each group's own admins.",
-        "section": "Moderation",
-        "order": 40,
-        "schema": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "ui": {
-          "widget": "tags",
-          "helpText": "Only with \"Also require WhatsApp admin\": groups whose WhatsApp admins may moderate. Empty: the community group when there is one, otherwise each group's own admins."
-        }
-      },
-      {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.exemptGroupChatIds",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.exemptGroupChatIds",
         "path": "exemptGroupChatIds",
         "label": "Exempt groups",
         "description": "Groups of this scope where moderation never acts.",
-        "section": "Moderation",
-        "order": 50,
+        "section": "People and roles",
+        "order": 100,
         "schema": {
           "type": "array",
           "items": {
@@ -331,13 +1072,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.reports.enabled",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.reports.enabled",
         "path": "reports.enabled",
         "label": "Member reports",
         "description": "Let members report a message to the admins with /report.",
-        "section": "Moderation",
-        "order": 60,
+        "section": "People and roles",
+        "order": 110,
         "schema": {
           "type": "boolean"
         },
@@ -347,13 +1088,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.warnings.ttlDays",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.warnings.ttlDays",
         "path": "warnings.ttlDays",
         "label": "Warnings last",
         "description": "Days a warning stays active.",
-        "section": "Moderation",
-        "order": 70,
+        "section": "People and roles",
+        "order": 120,
         "schema": {
           "type": "number",
           "min": 1,
@@ -366,13 +1107,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.warnings.alertAt",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.warnings.alertAt",
         "path": "warnings.alertAt",
         "label": "Alert admins at",
         "description": "Tell the admins when a member reaches this many active warnings.",
-        "section": "Moderation",
-        "order": 80,
+        "section": "People and roles",
+        "order": 130,
         "schema": {
           "type": "number",
           "min": 1,
@@ -384,13 +1125,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.suspension.defaultDays",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.suspension.defaultDays",
         "path": "suspension.defaultDays",
         "label": "Default suspension",
         "description": "Length of a suspension when the command gives none.",
         "section": "Suspensions and expulsions",
-        "order": 90,
+        "order": 140,
         "schema": {
           "type": "number",
           "min": 1,
@@ -403,13 +1144,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.suspension.maxDays",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.suspension.maxDays",
         "path": "suspension.maxDays",
         "label": "Longest suspension",
         "description": "Longest suspension an admin may give.",
         "section": "Suspensions and expulsions",
-        "order": 100,
+        "order": 150,
         "schema": {
           "type": "number",
           "min": 1,
@@ -422,29 +1163,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.suspension.rejoinGuard",
-        "path": "suspension.rejoinGuard",
-        "label": "Block rejoining",
-        "description": "Remove or reject anyone with an active suspension or expulsion who tries to rejoin a group here.",
-        "section": "Suspensions and expulsions",
-        "order": 110,
-        "schema": {
-          "type": "boolean"
-        },
-        "ui": {
-          "widget": "toggle",
-          "helpText": "Remove or reject anyone with an active suspension or expulsion who tries to rejoin a group here."
-        }
-      },
-      {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.suspension.noticeExtra",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.suspension.noticeExtra",
         "path": "suspension.noticeExtra",
         "label": "Suspension notice extra",
         "description": "Extra text added to the private message a suspended member receives, for example where to keep reading the group history.",
         "section": "Suspensions and expulsions",
-        "order": 120,
+        "order": 160,
         "schema": {
           "type": "string",
           "max": 1000
@@ -456,13 +1181,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.expulsion.noticeExtra",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.expulsion.noticeExtra",
         "path": "expulsion.noticeExtra",
         "label": "Expulsion notice extra",
         "description": "Extra text added to the private message an expelled member receives.",
         "section": "Suspensions and expulsions",
-        "order": 130,
+        "order": 170,
         "schema": {
           "type": "string",
           "max": 1000
@@ -474,13 +1199,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.shield.newMemberHours",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.shield.newMemberHours",
         "path": "shield.newMemberHours",
         "label": "New member period (hours)",
         "description": "Hours after joining during which spam can lead to automatic expulsion.",
         "section": "Spam and raid shield",
-        "order": 140,
+        "order": 180,
         "schema": {
           "type": "number",
           "min": 1,
@@ -492,13 +1217,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.shield.inviteLinkPolicy",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.shield.inviteLinkPolicy",
         "path": "shield.inviteLinkPolicy",
         "label": "Group invite links",
         "description": "What to do with WhatsApp group or channel invite links.",
         "section": "Spam and raid shield",
-        "order": 150,
+        "order": 190,
         "schema": {
           "type": "enum",
           "enum": [
@@ -534,13 +1259,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.shield.linkPolicy",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.shield.linkPolicy",
         "path": "shield.linkPolicy",
         "label": "Other links",
         "description": "What to do with links outside the allowed sites (or to the blocked sites, when listed).",
         "section": "Spam and raid shield",
-        "order": 160,
+        "order": 200,
         "schema": {
           "type": "enum",
           "enum": [
@@ -572,13 +1297,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.shield.allowedDomains",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.shield.allowedDomains",
         "path": "shield.allowedDomains",
         "label": "Allowed sites",
         "description": "Sites whose links are always fine.",
         "section": "Spam and raid shield",
-        "order": 170,
+        "order": 210,
         "schema": {
           "type": "array",
           "items": {
@@ -591,13 +1316,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.shield.blockedDomains",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.shield.blockedDomains",
         "path": "shield.blockedDomains",
         "label": "Blocked sites",
         "description": "When set, only links to these sites count as violations.",
         "section": "Spam and raid shield",
-        "order": 180,
+        "order": 220,
         "schema": {
           "type": "array",
           "items": {
@@ -610,13 +1335,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.shield.bannedPhrases",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.shield.bannedPhrases",
         "path": "shield.bannedPhrases",
         "label": "Banned phrases",
         "description": "Words or phrases that are not allowed.",
         "section": "Spam and raid shield",
-        "order": 190,
+        "order": 230,
         "schema": {
           "type": "array",
           "items": {
@@ -629,13 +1354,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.shield.bannedPhrasePolicy",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.shield.bannedPhrasePolicy",
         "path": "shield.bannedPhrasePolicy",
         "label": "Banned phrase action",
         "description": "What to do when a banned phrase appears.",
         "section": "Spam and raid shield",
-        "order": 200,
+        "order": 240,
         "schema": {
           "type": "enum",
           "enum": [
@@ -667,13 +1392,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.shield.flood.enabled",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.shield.flood.enabled",
         "path": "shield.flood.enabled",
         "label": "Flood protection",
         "description": "Act when someone sends too many messages at once.",
         "section": "Spam and raid shield",
-        "order": 210,
+        "order": 250,
         "schema": {
           "type": "boolean"
         },
@@ -683,13 +1408,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.shield.flood.maxMessages",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.shield.flood.maxMessages",
         "path": "shield.flood.maxMessages",
         "label": "Flood messages",
         "description": "Messages allowed within the flood window.",
         "section": "Spam and raid shield",
-        "order": 220,
+        "order": 260,
         "schema": {
           "type": "number",
           "min": 2,
@@ -701,13 +1426,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.shield.flood.windowSeconds",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.shield.flood.windowSeconds",
         "path": "shield.flood.windowSeconds",
         "label": "Flood window",
         "description": "Length of the flood window.",
         "section": "Spam and raid shield",
-        "order": 230,
+        "order": 270,
         "schema": {
           "type": "number",
           "min": 5,
@@ -720,13 +1445,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.shield.flood.policy",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.shield.flood.policy",
         "path": "shield.flood.policy",
         "label": "Flood action",
         "description": "What to do with a flood.",
         "section": "Spam and raid shield",
-        "order": 240,
+        "order": 280,
         "schema": {
           "type": "enum",
           "enum": [
@@ -762,13 +1487,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.shield.raid.enabled",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.shield.raid.enabled",
         "path": "shield.raid.enabled",
         "label": "Raid protection",
         "description": "Lock a group briefly when many people join at once.",
         "section": "Spam and raid shield",
-        "order": 250,
+        "order": 290,
         "schema": {
           "type": "boolean"
         },
@@ -778,13 +1503,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.shield.raid.maxJoins",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.shield.raid.maxJoins",
         "path": "shield.raid.maxJoins",
         "label": "Raid joins",
         "description": "Joins within the raid window that count as a raid.",
         "section": "Spam and raid shield",
-        "order": 260,
+        "order": 300,
         "schema": {
           "type": "number",
           "min": 2,
@@ -796,13 +1521,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.shield.raid.windowSeconds",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.shield.raid.windowSeconds",
         "path": "shield.raid.windowSeconds",
         "label": "Raid window",
         "description": "Length of the raid window.",
         "section": "Spam and raid shield",
-        "order": 270,
+        "order": 310,
         "schema": {
           "type": "number",
           "min": 10,
@@ -815,13 +1540,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.shield.raid.lockMinutes",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.shield.raid.lockMinutes",
         "path": "shield.raid.lockMinutes",
         "label": "Raid lock",
         "description": "How long the group stays admin-only after a raid.",
         "section": "Spam and raid shield",
-        "order": 280,
+        "order": 320,
         "schema": {
           "type": "number",
           "min": 1,
@@ -834,13 +1559,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.shield.raid.revokeInvite",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.shield.raid.revokeInvite",
         "path": "shield.raid.revokeInvite",
         "label": "Reset invite link on raid",
         "description": "Also reset the group invite link when a raid is detected.",
         "section": "Spam and raid shield",
-        "order": 290,
+        "order": 330,
         "schema": {
           "type": "boolean"
         },
@@ -850,13 +1575,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.etiquette.stickerBurst.enabled",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.etiquette.stickerBurst.enabled",
         "path": "etiquette.stickerBurst.enabled",
         "label": "Sticker bursts",
         "description": "Act when someone sends many stickers in a row.",
         "section": "Group etiquette",
-        "order": 300,
+        "order": 340,
         "schema": {
           "type": "boolean"
         },
@@ -866,13 +1591,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.etiquette.stickerBurst.maxStickers",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.etiquette.stickerBurst.maxStickers",
         "path": "etiquette.stickerBurst.maxStickers",
         "label": "Stickers allowed",
         "description": "Stickers allowed within the window.",
         "section": "Group etiquette",
-        "order": 310,
+        "order": 350,
         "schema": {
           "type": "number",
           "min": 1,
@@ -884,13 +1609,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.etiquette.stickerBurst.windowSeconds",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.etiquette.stickerBurst.windowSeconds",
         "path": "etiquette.stickerBurst.windowSeconds",
         "label": "Sticker window",
         "description": "Length of the sticker window.",
         "section": "Group etiquette",
-        "order": 320,
+        "order": 360,
         "schema": {
           "type": "number",
           "min": 5,
@@ -903,13 +1628,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.etiquette.stickerBurst.policy",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.etiquette.stickerBurst.policy",
         "path": "etiquette.stickerBurst.policy",
         "label": "Sticker burst action",
         "description": "What to do with a sticker burst.",
         "section": "Group etiquette",
-        "order": 330,
+        "order": 370,
         "schema": {
           "type": "enum",
           "enum": [
@@ -941,13 +1666,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.etiquette.forwardedChains.enabled",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.etiquette.forwardedChains.enabled",
         "path": "etiquette.forwardedChains.enabled",
         "label": "Forwarded chains",
         "description": "Act on forwarded chain messages.",
         "section": "Group etiquette",
-        "order": 340,
+        "order": 380,
         "schema": {
           "type": "boolean"
         },
@@ -957,13 +1682,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.etiquette.forwardedChains.policy",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.etiquette.forwardedChains.policy",
         "path": "etiquette.forwardedChains.policy",
         "label": "Forwarded action",
         "description": "What to do with forwarded messages.",
         "section": "Group etiquette",
-        "order": 350,
+        "order": 390,
         "schema": {
           "type": "enum",
           "enum": [
@@ -995,13 +1720,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.etiquette.mediaBlockedGroupChatIds",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.etiquette.mediaBlockedGroupChatIds",
         "path": "etiquette.mediaBlockedGroupChatIds",
         "label": "No-media groups",
         "description": "Groups where photos, videos and documents are not allowed.",
         "section": "Group etiquette",
-        "order": 360,
+        "order": 400,
         "schema": {
           "type": "array",
           "items": {
@@ -1014,13 +1739,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.etiquette.mediaPolicy",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.etiquette.mediaPolicy",
         "path": "etiquette.mediaPolicy",
         "label": "Media action",
         "description": "What to do with media in a no-media group.",
         "section": "Group etiquette",
-        "order": 370,
+        "order": 410,
         "schema": {
           "type": "enum",
           "enum": [
@@ -1052,13 +1777,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.etiquette.quietHours.enabled",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.etiquette.quietHours.enabled",
         "path": "etiquette.quietHours.enabled",
         "label": "Quiet hours",
         "description": "Act on messages sent during quiet hours.",
         "section": "Group etiquette",
-        "order": 380,
+        "order": 420,
         "schema": {
           "type": "boolean"
         },
@@ -1068,13 +1793,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.etiquette.quietHours.start",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.etiquette.quietHours.start",
         "path": "etiquette.quietHours.start",
         "label": "Quiet from",
         "description": "Start of quiet hours (HH:MM).",
         "section": "Group etiquette",
-        "order": 390,
+        "order": 430,
         "schema": {
           "type": "string",
           "max": 5
@@ -1085,13 +1810,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.etiquette.quietHours.end",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.etiquette.quietHours.end",
         "path": "etiquette.quietHours.end",
         "label": "Quiet until",
         "description": "End of quiet hours (HH:MM).",
         "section": "Group etiquette",
-        "order": 400,
+        "order": 440,
         "schema": {
           "type": "string",
           "max": 5
@@ -1102,13 +1827,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.etiquette.quietHours.timezone",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.etiquette.quietHours.timezone",
         "path": "etiquette.quietHours.timezone",
         "label": "Quiet hours time zone",
         "description": "IANA time zone, for example Europe/Lisbon.",
         "section": "Group etiquette",
-        "order": 410,
+        "order": 450,
         "schema": {
           "type": "string",
           "max": 64
@@ -1119,13 +1844,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.etiquette.quietHours.groupChatIds",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.etiquette.quietHours.groupChatIds",
         "path": "etiquette.quietHours.groupChatIds",
         "label": "Quiet hours groups",
         "description": "Groups with quiet hours; empty means every group here.",
         "section": "Group etiquette",
-        "order": 420,
+        "order": 460,
         "schema": {
           "type": "array",
           "items": {
@@ -1138,13 +1863,13 @@
         }
       },
       {
-        "pluginId": "official.moderation",
-        "id": "plugin.official.moderation.etiquette.quietHours.policy",
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.etiquette.quietHours.policy",
         "path": "etiquette.quietHours.policy",
         "label": "Quiet hours action",
         "description": "What to do with messages during quiet hours.",
         "section": "Group etiquette",
-        "order": 430,
+        "order": 470,
         "schema": {
           "type": "enum",
           "enum": [
