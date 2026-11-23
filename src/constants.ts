@@ -1,6 +1,6 @@
 export const MODERATION_PLUGIN_ID = 'official.community-admin';
 export const MODERATION_NAMESPACE = MODERATION_PLUGIN_ID;
-export const MODERATION_VERSION = '1.0.0';
+export const MODERATION_VERSION = '1.0.1';
 export const MODERATION_CORE_API_RANGE = '^0.3.29';
 export const MODERATION_DATABASE = 'moderation';
 export const MODERATION_MANAGE_PERMISSION = 'plugin.community-admin.moderate';

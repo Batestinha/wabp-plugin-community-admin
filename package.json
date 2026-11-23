@@ -1,6 +1,6 @@
 {
   "name": "@wabs/plugin-community-admin",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Community administration, member reports, group creation and moderation under scoped administrator roles.",
   "license": "MIT",
   "private": true,

@@ -51,7 +51,7 @@ export function registerCommunitySubgroupServices(
             await context.configFor(call.scopeId, call.actorIdentityId)
           );
           if (!config.enabled) {
-            throw new Error('Community Administration Assistant is disabled for this scope.');
+            throw new Error('Group Administration Assistant is disabled for this scope.');
           }
           return createCandidate({
             scopeId: call.scopeId,
@@ -83,7 +83,7 @@ export function registerCommunitySubgroupServices(
             await context.configFor(call.scopeId, call.actorIdentityId)
           );
           if (!config.enabled) {
-            throw new Error('Community Administration Assistant is disabled for this scope.');
+            throw new Error('Group Administration Assistant is disabled for this scope.');
           }
           return reconcileCreator({
             scopeId: call.scopeId,
@@ -116,7 +116,7 @@ export function registerCommunitySubgroupServices(
             await context.configFor(call.scopeId, call.actorIdentityId)
           );
           if (!config.enabled) {
-            throw new Error('Community Administration Assistant is disabled for this scope.');
+            throw new Error('Group Administration Assistant is disabled for this scope.');
           }
           return configureCandidate({
             scopeId: call.scopeId,
@@ -150,7 +150,7 @@ export function registerCommunitySubgroupServices(
 
           const config = parseCommunitySubgroupsConfig(await context.configFor(call.scopeId, call.actorIdentityId));
           if (!config.enabled) {
-            throw new Error('Community Administration Assistant is disabled for this scope.');
+            throw new Error('Group Administration Assistant is disabled for this scope.');
           }
           const participantWids = uniqueParticipantReferences(input.participantWids);
           const attemptedParticipantWids = participantWids.slice(0, config.maxParticipants);

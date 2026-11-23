@@ -49,7 +49,7 @@ export const doasMessages: MessageCatalog = {
   'official.community-admin.actions.help.reject.example': '/admin reject @person request not verified',
   'official.community-admin.actions.help.add.description': 'Add one person to the selected group.',
   'official.community-admin.actions.help.add.example': '/admin add @person',
-  'official.community-admin.actions.help.add-history.description': 'Add one or more people and share recent group history with them.',
+  'official.community-admin.actions.help.add-history.description': 'Add people with WhatsApp’s native recent-history sharing.',
   'official.community-admin.actions.help.add-history.example': '/admin add-history @person --history 50 --confirm',
   'official.community-admin.actions.help.remove.description': 'Remove one person from the selected group.',
   'official.community-admin.actions.help.remove.example': '/admin remove @person --confirm',
