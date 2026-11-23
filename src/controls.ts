@@ -306,7 +306,7 @@ const groupCreationControls: ModerationControl[] = [
 
 export const moderationControls: ModerationControl[] = [
   toggle(GENERAL, 'enabled', 'Enabled', 'Enable the assistant here. Assign Group Admin and Community Admin on the Access page.'),
-  choice('Join approval', 'joinApproval.policy', 'Require approval in every group', 'Apply to existing and newly created managed groups.',
+  choice('Join approval', 'joinApproval.policy', 'Require approval in managed groups', 'Apply to existing and new standalone groups and community subgroups that members can join directly.',
     [{ value: 'leave', label: 'Keep existing settings' }, { value: 'require', label: 'Require approval' }]),
   toggle('Join approval', 'joinApproval.autoApprove', 'Automatically approve other members', 'Approve requests from members without a hold while no raid lock is active.'),
   toggle('Admin actions', 'requireConfirmForHighRisk', 'Confirm high-risk actions', 'Require confirmation before high-risk admin actions.'),
