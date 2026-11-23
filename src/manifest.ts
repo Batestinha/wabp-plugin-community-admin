@@ -23,7 +23,7 @@ const commands = [...new Set([...MODERATION_COMMANDS, ...doasManifest.commands, 
 
 export const moderationManifest: PluginManifest = {
   pluginId: MODERATION_PLUGIN_ID,
-  name: 'Community Administration Assistant',
+  name: 'Group Administration Assistant',
   author: { name: 'Batestinha', url: 'https://github.com/Batestinha' },
   kind: 'managed_group',
   version: MODERATION_VERSION,
@@ -31,7 +31,7 @@ export const moderationManifest: PluginManifest = {
   messageNamespace: ns,
   descriptionKey: `${ns}.description`,
   defaultMessages: { ...moderationMessages, ...doasMessages, ...communitySubgroupsMessages,
-    [ns + '.help.family']: 'Community administration', [ns + '.help.feature.title']: 'Community Administration Assistant',
+    [ns + '.help.family']: 'Group Administration Assistant', [ns + '.help.feature.title']: 'Group Administration Assistant',
     [ns + '.role.group.label']: 'Group Admin', [ns + '.role.group.description']: 'Moderate members and manage group information in this scope.',
     [ns + '.role.community.label']: 'Community Admin', [ns + '.role.community.description']: 'Manage members, settings, structure and sending in this scope.',
     [ns + '.subgroups.infoDenied']: 'Only administrators can edit information in this group.' },
@@ -41,7 +41,7 @@ export const moderationManifest: PluginManifest = {
     titleKey: `${ns}.help.feature.title`,
     summaryKey: `${ns}.help.feature.summaryNeutral`,
     order: 80,
-    aliases: ['moderation', 'moderação', 'suspend', 'expel', 'report', 'denunciar'],
+    aliases: ['Administração da comunidade', 'Assistente de Administração da Comunidade', 'Community Administration Assistant', 'Community Administration Manager', 'moderation', 'moderação', 'suspend', 'expel', 'report', 'denunciar'],
     topics: [
       ...(doasManifest.help?.topics ?? []), ...(communitySubgroupsManifest.help?.topics ?? []),
       {

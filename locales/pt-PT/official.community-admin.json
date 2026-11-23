@@ -1,7 +1,7 @@
 {
   "official.community-admin.description": "Mantém os grupos seguros: suspende ou expulsa membros, recebe denúncias, trava spam e invasões, e aplica regras de etiqueta.",
-  "official.community-admin.help.family": "Administração da comunidade",
-  "official.community-admin.help.feature.title": "Assistente de Administração da Comunidade",
+  "official.community-admin.help.family": "Assistente de administração de grupos",
+  "official.community-admin.help.feature.title": "Assistente de administração de grupos",
   "official.community-admin.help.feature.summaryNeutral": "Mantém os grupos seguros: denúncias, proteção contra spam e suspensões ou expulsões pelos moderadores.",
   "official.community-admin.help.moderate.title": "Moderar membros",
   "official.community-admin.help.moderate.summary": "Suspende, expulsa, avisa ou levanta, em todos os grupos que este bot gere aqui.",
@@ -203,7 +203,7 @@
   "official.community-admin.actions.help.reject.example": "/admin reject @person pedido não verificado",
   "official.community-admin.actions.help.add.description": "Adicionar uma pessoa ao grupo selecionado.",
   "official.community-admin.actions.help.add.example": "/admin add @person novo membro",
-  "official.community-admin.actions.help.add-history.description": "Adicionar uma ou mais pessoas e partilhar com elas o histórico recente do grupo.",
+  "official.community-admin.actions.help.add-history.description": "Adiciona pessoas com a partilha nativa do histórico recente do WhatsApp.",
   "official.community-admin.actions.help.add-history.example": "/admin add-history @person --history 50 --comment Bem-vindo --confirm",
   "official.community-admin.actions.help.remove.description": "Remover uma pessoa do grupo selecionado.",
   "official.community-admin.actions.help.remove.example": "/admin remove @person pedido do membro --confirm",

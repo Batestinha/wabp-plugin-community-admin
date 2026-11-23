@@ -1,14 +1,14 @@
 {
   "schemaVersion": 2,
   "pluginId": "official.community-admin",
-  "name": "Community Administration Assistant",
+  "name": "Group Administration Assistant",
   "author": {
     "name": "Batestinha",
     "url": "https://github.com/Batestinha"
   },
   "description": "Community administration, member reports, group creation and moderation under scoped administrator roles.",
   "kind": "managed_group",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "coreApiRange": "^0.3.29",
   "entrypoint": "dist/index.js",
   "messageNamespace": "official.community-admin",
@@ -70,6 +70,10 @@
     "summaryKey": "official.community-admin.help.feature.summaryNeutral",
     "order": 80,
     "aliases": [
+      "Administração da comunidade",
+      "Assistente de Administração da Comunidade",
+      "Community Administration Assistant",
+      "Community Administration Manager",
       "moderation",
       "moderação",
       "suspend",
