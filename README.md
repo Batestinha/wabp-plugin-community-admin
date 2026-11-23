@@ -1,6 +1,6 @@
 # Group Administration Assistant
 
-Group Administration Assistant brings moderation, group administration and subgroup creation together for each managed scope. It requires WABP core API 0.3.29. WhatsApp help and responses are available in English and European Portuguese.
+Manages group membership, join requests, settings and subgroups. Administrators with the appropriate role can moderate messages, review reports, warn members, and suspend or expel them. It requires WABP core API 0.3.29. WhatsApp help and responses are available in English and European Portuguese.
 
 On the console’s Access page, assign **Group Admin** to people who moderate members and manage group information. **Community Admin** also grants group settings, structural changes and permission to send as the bot. Reports go privately to the people holding the moderation permission in that scope.
 

@@ -6,9 +6,9 @@
     "name": "Batestinha",
     "url": "https://github.com/Batestinha"
   },
-  "description": "Community administration, member reports, group creation and moderation under scoped administrator roles.",
+  "description": "Manages group membership, join requests, settings and subgroups. Administrators with the appropriate role can moderate messages, review reports, warn members, and suspend or expel them.",
   "kind": "managed_group",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "coreApiRange": "^0.3.29",
   "entrypoint": "dist/index.js",
   "messageNamespace": "official.community-admin",

@@ -2,10 +2,10 @@ import type { MessageCatalog } from '@wabs/plugin-sdk/i18n';
 import { MODERATION_NAMESPACE as ns } from './constants';
 
 export const moderationMessages: MessageCatalog = {
-  [`${ns}.description`]: 'Keep groups safe: suspend or expel members, take member reports, stop spam and raids, and apply group etiquette rules.',
+  [`${ns}.description`]: 'Manages group membership, join requests, settings and subgroups. Administrators with the appropriate role can moderate messages, review reports, warn members, and suspend or expel them.',
   [`${ns}.help.family`]: 'Moderation',
   [`${ns}.help.feature.title`]: 'Moderation',
-  [`${ns}.help.feature.summaryNeutral`]: 'Keeps the groups safe: reports, spam protection, and suspensions or expulsions by moderators.',
+  [`${ns}.help.feature.summaryNeutral`]: 'Report a message or create a subgroup. Administrators can manage members and group settings, handle reports and apply moderation rules.',
   [`${ns}.help.moderate.title`]: 'Moderate members',
   [`${ns}.help.moderate.summary`]: 'Suspend, expel, warn or lift, for every group this bot manages here.',
   [`${ns}.help.moderate.instruction`]: 'Use /admin suspend @member 7d reason, /admin expel @member reason, /admin lift @member, /admin extend @member 3d, /admin warn @member reason and /admin cases. Suspended and expelled members are removed from every group here; a suspension ends on its own and they are added back.',
