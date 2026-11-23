@@ -8,7 +8,7 @@
   },
   "description": "Manages group membership, join requests, settings and subgroups. Administrators with the appropriate role can moderate messages, review reports, warn members, and suspend or expel them.",
   "kind": "managed_group",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "coreApiRange": "^0.3.29",
   "entrypoint": "dist/index.js",
   "messageNamespace": "official.community-admin",
@@ -653,8 +653,8 @@
         "pluginId": "official.community-admin",
         "id": "plugin.official.community-admin.joinApproval.policy",
         "path": "joinApproval.policy",
-        "label": "Require approval in every group",
-        "description": "Apply to existing and newly created managed groups.",
+        "label": "Require approval in managed groups",
+        "description": "Apply to existing and new standalone groups and community subgroups that members can join directly.",
         "section": "Join approval",
         "order": 20,
         "schema": {
@@ -672,7 +672,7 @@
         },
         "ui": {
           "widget": "select",
-          "helpText": "Apply to existing and newly created managed groups."
+          "helpText": "Apply to existing and new standalone groups and community subgroups that members can join directly."
         }
       },
       {

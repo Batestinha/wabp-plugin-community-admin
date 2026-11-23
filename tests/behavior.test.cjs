@@ -276,13 +276,27 @@ test('auto-approval audits each unheld request and yields to raid locks and stan
   assert.ok(!rejected.some(action => action.type === 'group.approveMembershipRequest'));
 });
 
-test('required join approval reconciles all managed groups and is inherited by group creation', async () => {
-  const h = community({ joinApproval: { policy: 'require', autoApprove: false } });
+test('required join approval reconciles directly joinable managed groups and is inherited by group creation', async () => {
+  const config = { joinApproval: { policy: 'require', autoApprove: false } };
+  const h = host({ config, groups: [
+    { groupWid: 'parent@g.us', name: 'Community', members: [] },
+    { groupWid: 'announce@g.us', name: 'Community', parent: 'parent@g.us', members: [] },
+    { groupWid: 'main@g.us', name: 'Main', parent: 'parent@g.us', members: [] },
+    { groupWid: 'solo@g.us', name: 'Solo', members: [] },
+    { groupWid: 'watch@g.us', name: 'Observe only', mode: 'OBSERVE', members: [] }
+  ] });
+  h.context.communityGroupWidForScope = async () => 'parent@g.us';
+  h.context.communityAnnouncementGroupWidForScope = async () => 'announce@g.us';
   const hooks = plugin.registerHooks(h.context);
   await hooks.onRuntimeReady({ botIdentityId: h.bot.identityId, firstReadyForIdentity: false, startupBeforeWorker: true });
   const actions = await hooks.onPluginJob({ scopeId: 'scope-1', jobName: 'scope.configuration.changed', payload: {} });
-  assert.deepEqual(actions.map(action => action.groupWid).sort(), ['event@g.us','main@g.us','parent@g.us']);
+  assert.deepEqual(actions.map(action => action.groupWid).sort(), ['main@g.us', 'solo@g.us']);
   assert.ok(actions.every(action => action.type === 'group.setMembershipApprovalMode' && action.enabled));
+  for (const chatId of ['parent@g.us', 'announce@g.us']) {
+    assert.deepEqual(await hooks.onGroupScopeCovered({ scopeId: 'scope-1', chatId, newManagementMode: 'MANAGE' }), []);
+  }
+  assert.deepEqual(await hooks.onGroupScopeCovered({ scopeId: 'scope-1', chatId: 'main@g.us', newManagementMode: 'MANAGE' }),
+    actions.filter(action => action.groupWid === 'main@g.us'));
   assert.deepEqual(await hooks.onGroupScopeCovered({ scopeId: 'scope-1', chatId: 'watch@g.us', newManagementMode: 'OBSERVE' }), undefined);
   const raw = await h.context.configFor('scope-1');
   assert.equal(require('../dist/subgroups/config').parseCommunitySubgroupsConfig(raw).creationPolicy.joinApproval,true);

@@ -270,8 +270,15 @@ async function raidActions(
 async function requiredApproval(context: HookContext, scopeId: string, groupWid?: string): Promise<PluginAction[]> {
   const config = await configFor(context, scopeId);
   if (!config.enabled || config.joinApproval.policy !== 'require') return [];
-  const groups = await context.coveredGroupsForScope?.(scopeId) ?? [];
-  return groups.filter(group => group.managementMode === 'MANAGE' && (!groupWid || group.groupWid === groupWid))
+  const [groups, community, announcement] = await Promise.all([
+    context.coveredGroupsForScope?.(scopeId),
+    context.communityGroupWidForScope?.(scopeId),
+    context.communityAnnouncementGroupWidForScope?.(scopeId)
+  ]);
+  // The community parent and its default announcement group mirror membership of the subgroups.
+  return (groups ?? []).filter(group => group.managementMode === 'MANAGE'
+      && group.groupWid !== community && group.groupWid !== announcement
+      && (!groupWid || group.groupWid === groupWid))
     .map(group => ({ type: 'group.setMembershipApprovalMode', groupWid: group.groupWid, enabled: true,
       reason: MODERATION_PLUGIN_ID + ':require-join-approval' }));
 }
