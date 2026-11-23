@@ -1,8 +1,8 @@
 {
-  "official.community-admin.description": "Mantém os grupos seguros: suspende ou expulsa membros, recebe denúncias, trava spam e invasões, e aplica regras de etiqueta.",
+  "official.community-admin.description": "Gere membros, pedidos de adesão, definições e subgrupos. Os administradores com a função adequada podem moderar mensagens, analisar denúncias, advertir membros, suspendê-los ou expulsá-los.",
   "official.community-admin.help.family": "Assistente de administração de grupos",
   "official.community-admin.help.feature.title": "Assistente de administração de grupos",
-  "official.community-admin.help.feature.summaryNeutral": "Mantém os grupos seguros: denúncias, proteção contra spam e suspensões ou expulsões pelos moderadores.",
+  "official.community-admin.help.feature.summaryNeutral": "Denuncie uma mensagem ou crie um subgrupo. Os administradores podem gerir membros e definições dos grupos, analisar denúncias e aplicar as regras de moderação.",
   "official.community-admin.help.moderate.title": "Moderar membros",
   "official.community-admin.help.moderate.summary": "Suspende, expulsa, avisa ou levanta, em todos os grupos que este bot gere aqui.",
   "official.community-admin.help.moderate.instruction": "Usa /admin suspend @membro 7d motivo, /admin expel @membro motivo, /admin lift @membro, /admin extend @membro 3d, /admin warn @membro motivo e /admin cases. Membros suspensos ou expulsos são removidos de todos os grupos daqui; uma suspensão termina sozinha e voltam a ser adicionados.",
