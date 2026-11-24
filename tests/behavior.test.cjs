@@ -259,6 +259,62 @@ test('Community Admin and Group Admin expose the intended grants and every route
     'official.community-admin.participants.preview','official.community-admin.participants.execute','official.community-admin.group.execute']);
 });
 
+test('auto-approval uses the pending list when an admin add names the adder', async () => {
+  const h = community({ joinApproval: { autoApprove: true } });
+  const bernardo = person('Bernardo', '351935000001');
+  const shino = person('Shino', '351935000002');
+  const david = person('David', '351935000003');
+  for (const who of [bernardo, shino, david]) {
+    for (const address of who.aliases) h.people.set(address, who);
+  }
+  h.context.getGroupMembershipRequests = async (groupWid) => {
+    assert.equal(groupWid, 'event@g.us');
+    return [
+      { wid: bernardo.lidWid, requestedAt: '2026-11-24T22:33:57Z' },
+      { wid: shino.lidWid, requestedAt: '2026-11-24T22:33:57Z' },
+      { wid: david.lidWid, requestedAt: '2026-11-24T22:33:57Z' }
+    ];
+  };
+  const hooks = plugin.registerHooks(h.context);
+  const actions = await hooks.onParticipantChange({
+    pluginId: plugin.manifest.pluginId, scopeId: 'scope-1', groupWid: 'event@g.us', managementMode: 'MANAGE',
+    receivedAt: new Date(), eventId: 'added-by-admin', chatId: 'event@g.us', action: 'membership_request',
+    botIdentityIds: [], affectedIdentities: [ana]
+  });
+  const approved = actions.filter(action => action.type === 'group.approveMembershipRequest').map(action => action.userWid).sort();
+  assert.deepEqual(approved, [bernardo.canonicalWid, david.canonicalWid, shino.canonicalWid].sort());
+  assert.ok(actions.filter(action => action.action === 'community-admin.join-request.approved')
+    .every(action => action.targetJson.identityId !== ana.identityId));
+});
+
+test('a held person on the pending list is rejected and the adder is not approved', async () => {
+  const h = community({ joinApproval: { autoApprove: true } });
+  const bernardo = person('Bernardo', '351935000001');
+  for (const address of bernardo.aliases) h.people.set(address, bernardo);
+  h.context.getGroupMembershipRequests = async () => [{ wid: bernardo.lidWid, requestedAt: '2026-11-24T22:33:57Z' }];
+  h.context.memberStandingsForScope = async () => [{ identityId: bernardo.identityId, standing: 'suspended', caseRef: 'held' }];
+  const hooks = plugin.registerHooks(h.context);
+  const actions = await hooks.onParticipantChange({
+    pluginId: plugin.manifest.pluginId, scopeId: 'scope-1', groupWid: 'event@g.us', managementMode: 'MANAGE',
+    receivedAt: new Date(), eventId: 'held-request', chatId: 'event@g.us', action: 'membership_request',
+    botIdentityIds: [], affectedIdentities: [ana]
+  });
+  assert.ok(actions.some(action => action.type === 'group.rejectMembershipRequest' && action.userWid === bernardo.canonicalWid));
+  assert.ok(!actions.some(action => action.type === 'group.approveMembershipRequest'));
+});
+
+test('a failed pending-list read still approves the named requester', async () => {
+  const h = community({ joinApproval: { autoApprove: true } });
+  h.context.getGroupMembershipRequests = async () => { throw new Error('cooling down'); };
+  const hooks = plugin.registerHooks(h.context);
+  const actions = await hooks.onParticipantChange({
+    pluginId: plugin.manifest.pluginId, scopeId: 'scope-1', groupWid: 'event@g.us', managementMode: 'MANAGE',
+    receivedAt: new Date(), eventId: 'link', chatId: 'event@g.us', action: 'membership_request',
+    botIdentityIds: [], affectedIdentities: [rui]
+  });
+  assert.ok(actions.some(action => action.type === 'group.approveMembershipRequest' && action.userWid === rui.canonicalWid));
+});
+
 test('auto-approval audits each unheld request and yields to raid locks and standings', async () => {
   const h = community({ joinApproval: { autoApprove: true } });
   const hooks = plugin.registerHooks(h.context);

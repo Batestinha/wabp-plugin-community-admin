@@ -25,6 +25,8 @@ export interface ModerationDeps {
   ephemeralStore?: PluginEphemeralStore | undefined;
   coveredGroupsForScope?: ((scopeId: string) => Promise<PluginCoveredGroup[]>) | undefined;
   getGroupParticipants?: ((groupWid: string) => Promise<GroupParticipant[]>) | undefined;
+  /** Live pending join requests. An admin add names the adder and leaves the recipient list empty. */
+  getGroupMembershipRequests?: ((groupWid: string) => Promise<Array<{ wid: string; requestedAt: string }>>) | undefined;
   resolveIdentityAddress?: ((wid: string) => Promise<StableIdentityAddressResolution>) | undefined;
   resolveStableIdentityById?: ((identityId: string) => Promise<StableIdentityAddressResolution>) | undefined;
   communityParentGroupWidForGroup?: ((groupWid: string) => Promise<string | undefined>) | undefined;
