@@ -1,3 +1,4 @@
+import { withMessageSlot } from '../messageSlot';
 import type { CommandMetadata } from '@wabs/plugin-sdk/command-metadata';
 import type { FlowSessionSnapshot } from '@wabs/plugin-sdk/flow-engine';
 import type { CommandContext } from '@wabs/plugin-sdk/commands';
@@ -91,7 +92,7 @@ export function registerCommunitySubgroupCommands(context: PluginCommandContext)
     topicId: 'edit-subgroup',
     exampleKey: 'official.community-admin.subgroups.help.title.example'
   }), async (ctx) => await mayEditInfo(context, requireScopeId(ctx), subgroupCommandActor(ctx).identityId, ctx.groupWid, ctx.groupId)
-    ? updateTitle(context, ctx) : { handled: true, text: ctx.t('official.community-admin.subgroups.infoDenied') });
+    ? updateTitle(context, ctx) : { handled: true, text: ctx.t('official.community-admin.subgroups.infoDenied'), ...withMessageSlot('official.community-admin.subgroups.infoDenied') });
 
   router.register('admin', 'description', commandMetadata({
     auditAction: 'community_subgroups.description',
@@ -100,7 +101,7 @@ export function registerCommunitySubgroupCommands(context: PluginCommandContext)
     topicId: 'edit-subgroup',
     exampleKey: 'official.community-admin.subgroups.help.description.example'
   }), async (ctx) => await mayEditInfo(context, requireScopeId(ctx), subgroupCommandActor(ctx).identityId, ctx.groupWid, ctx.groupId)
-    ? updateDescription(context, ctx) : { handled: true, text: ctx.t('official.community-admin.subgroups.infoDenied') });
+    ? updateDescription(context, ctx) : { handled: true, text: ctx.t('official.community-admin.subgroups.infoDenied'), ...withMessageSlot('official.community-admin.subgroups.infoDenied') });
 
   router.register('admin', 'pin', commandMetadata({
     auditAction: 'community_subgroups.pin',
@@ -109,7 +110,7 @@ export function registerCommunitySubgroupCommands(context: PluginCommandContext)
     topicId: 'pin-messages',
     exampleKey: 'official.community-admin.subgroups.help.pin.example'
   }), async (ctx) => await mayEditInfo(context, requireScopeId(ctx), subgroupCommandActor(ctx).identityId, ctx.groupWid, ctx.groupId)
-    ? startPinDurationFlow(context, ctx) : { handled: true, text: ctx.t('official.community-admin.subgroups.infoDenied') });
+    ? startPinDurationFlow(context, ctx) : { handled: true, text: ctx.t('official.community-admin.subgroups.infoDenied'), ...withMessageSlot('official.community-admin.subgroups.infoDenied') });
 
   router.register('admin', 'unpin', commandMetadata({
     auditAction: 'community_subgroups.unpin',
@@ -118,7 +119,7 @@ export function registerCommunitySubgroupCommands(context: PluginCommandContext)
     topicId: 'pin-messages',
     exampleKey: 'official.community-admin.subgroups.help.unpin.example'
   }), async (ctx) => await mayEditInfo(context, requireScopeId(ctx), subgroupCommandActor(ctx).identityId, ctx.groupWid, ctx.groupId)
-    ? unpinQuotedMessage(context, ctx) : { handled: true, text: ctx.t('official.community-admin.subgroups.infoDenied') });
+    ? unpinQuotedMessage(context, ctx) : { handled: true, text: ctx.t('official.community-admin.subgroups.infoDenied'), ...withMessageSlot('official.community-admin.subgroups.infoDenied') });
 }
 
 async function startCreateFlow(context: PluginCommandContext, ctx: CommandContext) {
@@ -127,11 +128,11 @@ async function startCreateFlow(context: PluginCommandContext, ctx: CommandContex
   const actor = subgroupCommandActor(ctx);
   const config = parseCommunitySubgroupsConfig(await runtime.configFor(scopeId, actor.identityId));
   if (!config.enabled) {
-    return { handled: true, text: ctx.t('official.community-admin.subgroups.disabled') };
+    return { handled: true, text: ctx.t('official.community-admin.subgroups.disabled'), ...withMessageSlot('official.community-admin.subgroups.disabled') };
   }
   const parentCommunityWid = await resolveParentCommunityWid(context, ctx, scopeId);
   if (!parentCommunityWid) {
-    return { handled: true, text: ctx.t('official.community-admin.subgroups.parentMissing') };
+    return { handled: true, text: ctx.t('official.community-admin.subgroups.parentMissing'), ...withMessageSlot('official.community-admin.subgroups.parentMissing') };
   }
 
   const definition = createSubgroupFlowDefinition({ t: ctx.t });
@@ -158,7 +159,7 @@ async function startCreateFlow(context: PluginCommandContext, ctx: CommandContex
       await runtime.dataStore.delete(subgroupDraftKey(scopeId, session.id));
     }
   });
-  return { handled: true, text: ctx.t('official.community-admin.subgroups.create.started') };
+  return { handled: true, text: ctx.t('official.community-admin.subgroups.create.started'), ...withMessageSlot('official.community-admin.subgroups.create.started') };
 }
 
 function registerSubgroupFlowCompletionHandler(
@@ -181,12 +182,12 @@ function registerSubgroupFlowCompletionHandler(
     }
     await runtime.dataStore.delete(subgroupDraftKey(snapshot.scopeId, lock.flowSessionId));
     if (!subgroupFlowConfirmed(snapshot)) {
-      await activeTransport.sendText(draft.chatId, t('official.community-admin.subgroups.create.cancelled'));
+      await activeTransport.sendText(draft.chatId, t('official.community-admin.subgroups.create.cancelled'), withMessageSlot('official.community-admin.subgroups.create.cancelled'));
       return true;
     }
     const answers = subgroupFlowAnswers(snapshot);
     if (!answers || !context.services) {
-      await activeTransport.sendText(draft.chatId, t('official.community-admin.subgroups.create.invalid'));
+      await activeTransport.sendText(draft.chatId, t('official.community-admin.subgroups.create.invalid'), withMessageSlot('official.community-admin.subgroups.create.invalid'));
       return true;
     }
     try {
@@ -248,11 +249,11 @@ function registerSubgroupFlowCompletionHandler(
       await activeTransport.sendText(draft.chatId, t('official.community-admin.subgroups.create.created', {
         title: result.created.title,
         chatId: result.created.chatId
-      }));
+      }), withMessageSlot('official.community-admin.subgroups.create.created'));
     } catch (error) {
       await activeTransport.sendText(draft.chatId, t('official.community-admin.subgroups.create.failed', {
         reason: errorMessage(error)
-      }));
+      }), withMessageSlot('official.community-admin.subgroups.create.failed'));
     }
     return true;
   });
@@ -260,32 +261,32 @@ function registerSubgroupFlowCompletionHandler(
 
 async function updateTitle(context: PluginCommandContext, ctx: CommandContext) {
   if (!await scopedConfigEnabled(context, ctx)) {
-    return { handled: true, text: ctx.t('official.community-admin.subgroups.disabled') };
+    return { handled: true, text: ctx.t('official.community-admin.subgroups.disabled'), ...withMessageSlot('official.community-admin.subgroups.disabled') };
   }
   if (!ctx.groupWid) {
-    return { handled: true, text: ctx.t('official.community-admin.subgroups.childOnly') };
+    return { handled: true, text: ctx.t('official.community-admin.subgroups.childOnly'), ...withMessageSlot('official.community-admin.subgroups.childOnly') };
   }
   const subject = ctx.command.rawArgs.replace(/^\s*(?:title|description)\b\s*/iu, '').trim();
   if (!subject) {
-    return { handled: true, text: ctx.t('official.community-admin.subgroups.titleUsage') };
+    return { handled: true, text: ctx.t('official.community-admin.subgroups.titleUsage'), ...withMessageSlot('official.community-admin.subgroups.titleUsage') };
   }
   const ownership = await isCommunityChild(context, ctx) && await context.catalog?.enabledFor('official.community-events', requireScopeId(ctx))
     ? await resolveEventSubgroupOwnership(context, ctx) : { kind: 'unowned' as const };
   if (ownership.kind === 'owned') {
     return {
       handled: true,
-      text: ctx.t('official.community-events.titleManaged', { eventId: ownership.eventId })
+      text: ctx.t('official.community-events.titleManaged', { eventId: ownership.eventId }), ...withMessageSlot('official.community-events.titleManaged')
     };
   }
   if (ownership.kind === 'ambiguous') {
-    return { handled: true, text: ctx.t('official.community-events.titleManagedAmbiguous') };
+    return { handled: true, text: ctx.t('official.community-events.titleManagedAmbiguous'), ...withMessageSlot('official.community-events.titleManagedAmbiguous') };
   }
   if (ownership.kind === 'unavailable') {
-    return { handled: true, text: ctx.t('official.community-events.titleOwnershipUnavailable') };
+    return { handled: true, text: ctx.t('official.community-events.titleOwnershipUnavailable'), ...withMessageSlot('official.community-events.titleOwnershipUnavailable') };
   }
   return {
     handled: true,
-    text: ctx.t('official.community-admin.subgroups.titleQueued'),
+    text: ctx.t('official.community-admin.subgroups.titleQueued'), ...withMessageSlot('official.community-admin.subgroups.titleQueued'),
     pluginActions: [{
       type: 'group.setSubject' as const,
       groupWid: ctx.groupWid!,
@@ -326,18 +327,18 @@ async function resolveEventSubgroupOwnership(
 
 async function updateDescription(context: PluginCommandContext, ctx: CommandContext) {
   if (!await scopedConfigEnabled(context, ctx)) {
-    return { handled: true, text: ctx.t('official.community-admin.subgroups.disabled') };
+    return { handled: true, text: ctx.t('official.community-admin.subgroups.disabled'), ...withMessageSlot('official.community-admin.subgroups.disabled') };
   }
   if (!ctx.groupWid) {
-    return { handled: true, text: ctx.t('official.community-admin.subgroups.childOnly') };
+    return { handled: true, text: ctx.t('official.community-admin.subgroups.childOnly'), ...withMessageSlot('official.community-admin.subgroups.childOnly') };
   }
   const description = ctx.command.rawArgs.replace(/^\s*(?:title|description)\b\s*/iu, '').trim();
   if (!description) {
-    return { handled: true, text: ctx.t('official.community-admin.subgroups.descriptionUsage') };
+    return { handled: true, text: ctx.t('official.community-admin.subgroups.descriptionUsage'), ...withMessageSlot('official.community-admin.subgroups.descriptionUsage') };
   }
   return {
     handled: true,
-    text: ctx.t('official.community-admin.subgroups.descriptionQueued'),
+    text: ctx.t('official.community-admin.subgroups.descriptionQueued'), ...withMessageSlot('official.community-admin.subgroups.descriptionQueued'),
     pluginActions: [{
       type: 'group.setDescription' as const,
       groupWid: ctx.groupWid!,
@@ -352,13 +353,13 @@ async function startPinDurationFlow(context: PluginCommandContext, ctx: CommandC
   const scopeId = requireScopeId(ctx);
   const config = parseCommunitySubgroupsConfig(await runtime.configFor(scopeId, subgroupCommandActor(ctx).identityId));
   if (!config.enabled) {
-    return { handled: true, text: ctx.t('official.community-admin.subgroups.disabled') };
+    return { handled: true, text: ctx.t('official.community-admin.subgroups.disabled'), ...withMessageSlot('official.community-admin.subgroups.disabled') };
   }
   if (!ctx.groupWid) {
-    return { handled: true, text: ctx.t('official.community-admin.subgroups.childOnly') };
+    return { handled: true, text: ctx.t('official.community-admin.subgroups.childOnly'), ...withMessageSlot('official.community-admin.subgroups.childOnly') };
   }
   if (!ctx.message.replyTo) {
-    return { handled: true, text: ctx.t('official.community-admin.subgroups.pinQuotedOnly') };
+    return { handled: true, text: ctx.t('official.community-admin.subgroups.pinQuotedOnly'), ...withMessageSlot('official.community-admin.subgroups.pinQuotedOnly') };
   }
   const messageId = ctx.message.replyTo.messageId;
   const actorWid = ctx.actor?.wid ?? ctx.message.senderWid;
@@ -417,11 +418,11 @@ function registerPinDurationHandler(
     if (!durationSeconds) {
       await activeTransport.sendText(draft.chatId, t('official.community-admin.subgroups.pin.failed', {
         reason: t('official.community-admin.subgroups.pin.failed.invalidDuration')
-      }));
+      }), withMessageSlot('official.community-admin.subgroups.pin.failed'));
       return true;
     }
     if (!await mayEditInfo(context, draft.scopeId, draft.actorIdentityId, draft.groupWid, draft.groupId)) {
-      await activeTransport.sendText(draft.chatId, t('official.community-admin.subgroups.infoDenied'));
+      await activeTransport.sendText(draft.chatId, t('official.community-admin.subgroups.infoDenied'), withMessageSlot('official.community-admin.subgroups.infoDenied'));
       return true;
     }
     const capabilities = await context.botCapabilitiesFor?.(draft.groupWid);
@@ -430,14 +431,14 @@ function registerPinDurationHandler(
         reason: !capabilities.botIsAdmin
           ? t('official.community-admin.subgroups.pin.failed.botNotAdmin')
           : t('official.community-admin.subgroups.pin.failed.unsupported')
-      }));
+      }), withMessageSlot('official.community-admin.subgroups.pin.failed'));
       return true;
     }
     try {
       await activeTransport.pinMessage(draft.messageId, durationSeconds);
       await activeTransport.sendText(draft.chatId, t('official.community-admin.subgroups.pin.done', {
         durationLabel: pinDurationLabel(durationSeconds, t)
-      }), { quotedMessageId: draft.messageId });
+      }), withMessageSlot('official.community-admin.subgroups.pin.done', { quotedMessageId: draft.messageId }));
     } catch (error) {
       context.logger?.warn({
         error,
@@ -447,7 +448,7 @@ function registerPinDurationHandler(
       }, 'Unable to pin community subgroup message');
       await activeTransport.sendText(draft.chatId, t('official.community-admin.subgroups.pin.failed', {
         reason: t('official.community-admin.subgroups.pin.failed.transport')
-      }));
+      }), withMessageSlot('official.community-admin.subgroups.pin.failed'));
     }
     return true;
   });
@@ -455,17 +456,17 @@ function registerPinDurationHandler(
 
 async function unpinQuotedMessage(context: PluginCommandContext, ctx: CommandContext) {
   if (!await scopedConfigEnabled(context, ctx)) {
-    return { handled: true, text: ctx.t('official.community-admin.subgroups.disabled') };
+    return { handled: true, text: ctx.t('official.community-admin.subgroups.disabled'), ...withMessageSlot('official.community-admin.subgroups.disabled') };
   }
   if (!ctx.groupWid) {
-    return { handled: true, text: ctx.t('official.community-admin.subgroups.childOnly') };
+    return { handled: true, text: ctx.t('official.community-admin.subgroups.childOnly'), ...withMessageSlot('official.community-admin.subgroups.childOnly') };
   }
   if (!ctx.message.replyTo) {
-    return { handled: true, text: ctx.t('official.community-admin.subgroups.unpinQuotedOnly') };
+    return { handled: true, text: ctx.t('official.community-admin.subgroups.unpinQuotedOnly'), ...withMessageSlot('official.community-admin.subgroups.unpinQuotedOnly') };
   }
   return {
     handled: true,
-    text: ctx.t('official.community-admin.subgroups.unpinQueued'),
+    text: ctx.t('official.community-admin.subgroups.unpinQueued'), ...withMessageSlot('official.community-admin.subgroups.unpinQueued'),
     pluginActions: [{
       type: 'message.unpin' as const,
       messageId: ctx.message.replyTo.messageId,

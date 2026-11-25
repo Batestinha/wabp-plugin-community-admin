@@ -1,3 +1,4 @@
+import { withMessageSlot } from '../messageSlot';
 import { protectiveTarget } from '../authority';
 import type { CommandMetadata, CommandTargetSpec } from '@wabs/plugin-sdk/command-metadata';
 import type { CommandContext } from '@wabs/plugin-sdk/commands';
@@ -468,25 +469,25 @@ export function registerDoasCommands(context: PluginCommandContext): void {
     const actionMeta = DOAS_COMMAND_METADATA[actionName];
     router.register('admin', actionName === 'create-child-group' ? 'subgroup' : actionName, doasCommand(permissionForAction(actionName), actionName), async (ctx) => {
       if (ctx.message.context === 'group' && ctx.targets?.chat?.source === 'flag') {
-        return { handled: true, text: ctx.t('official.community-admin.actions.groupChatFlagPrivateOnly') };
+        return { handled: true, text: ctx.t('official.community-admin.actions.groupChatFlagPrivateOnly'), ...withMessageSlot('official.community-admin.actions.groupChatFlagPrivateOnly') };
       }
 
       const scopeId = requireScopeId(ctx);
       const config = parseDoasConfig(await runtime.configFor(scopeId, doasCommandIdentityId(ctx)));
       if (!config.enabled) {
-        return { handled: true, text: ctx.t('official.community-admin.actions.disabled') };
+        return { handled: true, text: ctx.t('official.community-admin.actions.disabled'), ...withMessageSlot('official.community-admin.actions.disabled') };
       }
 
       const parsed = parseDoasArgs(effectiveArgs(ctx));
       if (parsed.invalidFanout) {
         return {
           handled: true,
-          text: ctx.t('official.community-admin.actions.help.usage', { usage: actionMeta.usage })
+          text: ctx.t('official.community-admin.actions.help.usage', { usage: actionMeta.usage }), ...withMessageSlot('official.community-admin.actions.help.usage')
         };
       }
       const primary = primaryTarget(ctx);
       if (!primary && actionRequiresPrimaryTarget(actionName)) {
-        return { handled: true, text: ctx.t('official.community-admin.actions.groupTargetRequired') };
+        return { handled: true, text: ctx.t('official.community-admin.actions.groupTargetRequired'), ...withMessageSlot('official.community-admin.actions.groupTargetRequired') };
       }
 
       const targetResolution = primary
@@ -506,18 +507,18 @@ export function registerDoasCommands(context: PluginCommandContext): void {
       if (actionName === 'invite-link') {
         const groupWid = targetResolution.targets[0]?.groupWid ?? primary?.groupWid;
         if (!groupWid) {
-          return { handled: true, text: ctx.t('official.community-admin.actions.groupTargetRequired') };
+          return { handled: true, text: ctx.t('official.community-admin.actions.groupTargetRequired'), ...withMessageSlot('official.community-admin.actions.groupTargetRequired') };
         }
         const inviteCode = await context.getGroupInviteCode?.(groupWid);
         if (!inviteCode) {
-          return { handled: true, text: ctx.t('official.community-admin.actions.inviteLinkUnavailable') };
+          return { handled: true, text: ctx.t('official.community-admin.actions.inviteLinkUnavailable'), ...withMessageSlot('official.community-admin.actions.inviteLinkUnavailable') };
         }
         const inviteLink = inviteCode.startsWith('http')
           ? inviteCode
           : `https://chat.whatsapp.com/${inviteCode}`;
         return {
           handled: true,
-          text: ctx.t('official.community-admin.actions.inviteLink', { inviteLink })
+          text: ctx.t('official.community-admin.actions.inviteLink', { inviteLink }), ...withMessageSlot('official.community-admin.actions.inviteLink')
         };
       }
 
@@ -525,7 +526,7 @@ export function registerDoasCommands(context: PluginCommandContext): void {
       if (actionInput.userWid && ['remove', 'demote', 'reject'].includes(actionName)) {
         const member = await context.resolveIdentityAddress?.(actionInput.userWid);
         if (!member || await protectiveTarget(context, scopeId, doasCommandIdentityId(ctx), member.identityId)) {
-          return { handled: true, text: ctx.t('official.community-admin.protectedMember') };
+          return { handled: true, text: ctx.t('official.community-admin.protectedMember'), ...withMessageSlot('official.community-admin.protectedMember') };
         }
       }
       const botProtection = await botProtectionInput(context, actionName, actionInput.userWid);
@@ -548,7 +549,7 @@ export function registerDoasCommands(context: PluginCommandContext): void {
         text: ctx.t('official.community-admin.actions.planned', {
           action: actionName,
           count: String(plan.targetCount)
-        }),
+        }), ...withMessageSlot('official.community-admin.actions.planned'),
         pluginActions: plan.actions
       };
     });

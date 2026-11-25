@@ -1,3 +1,4 @@
+import { withMessageSlot } from './messageSlot';
 import { protectiveTarget } from './authority';
 import type { PluginAction } from '@wabs/plugin-sdk/actions';
 import type { CommandMetadata, CommandTargetSpec } from '@wabs/plugin-sdk/command-metadata';
@@ -95,8 +96,19 @@ const REPORT_COMMAND: CommandMetadata = {
   }
 };
 
-function reply(text: string, pluginActions: PluginAction[] = []): CommandResult {
-  return { handled: true, text, ...(pluginActions.length ? { pluginActions } : {}) };
+function reply(
+  text: string,
+  pluginActions: PluginAction[] | ReturnType<typeof withMessageSlot> = [],
+  slot?: ReturnType<typeof withMessageSlot>
+): CommandResult {
+  const actions = Array.isArray(pluginActions) ? pluginActions : [];
+  const attached = Array.isArray(pluginActions) ? slot : pluginActions;
+  return {
+    handled: true,
+    text,
+    ...(actions.length ? { pluginActions: actions } : {}),
+    ...(attached ?? {})
+  };
 }
 
 function args(ctx: CommandContext): string[] {
@@ -132,14 +144,14 @@ interface Prepared {
 /** Scope, configuration, storage, the acting admin and the authority check, shared by every /admin command. */
 async function prepare(deps: Deps, ctx: CommandContext): Promise<Prepared | CommandResult> {
   const scopeId = scopeOf(ctx);
-  if (!scopeId) return reply(ctx.t(`${ns}.disabled`));
+  if (!scopeId) return reply(ctx.t(`${ns}.disabled`), withMessageSlot(`${ns}.disabled`));
   const actorIdentityId = ctx.actor?.identityAddress.identityId;
   const config = await configFor(deps, scopeId, actorIdentityId);
-  if (!config.enabled) return reply(ctx.t(`${ns}.disabled`));
+  if (!config.enabled) return reply(ctx.t(`${ns}.disabled`), withMessageSlot(`${ns}.disabled`));
   const db = database(deps);
-  if (!db) return reply(ctx.t(`${ns}.unavailable`));
+  if (!db) return reply(ctx.t(`${ns}.unavailable`), withMessageSlot(`${ns}.unavailable`));
   const actor = actorIdentityId ? await memberById(deps, actorIdentityId) : undefined;
-  if (!actor) return reply(ctx.t(`${ns}.unknownMember`));
+  if (!actor) return reply(ctx.t(`${ns}.unknownMember`), withMessageSlot(`${ns}.unknownMember`));
   return { scopeId, config, db, actor };
 }
 
@@ -167,7 +179,7 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
       cases: listActiveCases(db, scopeId).length,
       reports: openReports(db, scopeId).length,
       authority
-    }));
+    }), withMessageSlot(`${ns}.status`));
   });
 
   const startCase = (kind: 'suspension' | 'expulsion') => async (ctx: CommandContext): Promise<CommandResult> => {
@@ -176,17 +188,17 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
     const { config, db, scopeId, actor } = prepared;
     const { member, rest } = await targetMember(deps, ctx);
     if (!member) return reply(ctx.t(kind === 'suspension' ? `${ns}.usage.suspend` : `${ns}.usage.expel`));
-    if (await isProtected(deps, member) || await protectiveTarget(deps, scopeId, actor.identityId, member.identityId)) return reply(ctx.t(`${ns}.protectedMember`));
+    if (await isProtected(deps, member) || await protectiveTarget(deps, scopeId, actor.identityId, member.identityId)) return reply(ctx.t(`${ns}.protectedMember`), withMessageSlot(`${ns}.protectedMember`));
     let days: number | undefined;
     let reasonWords = rest;
     if (kind === 'suspension') {
       const parsed = /^\d/u.test(rest[0] ?? '') ? parseDays(rest[0], config.suspension.defaultDays, config.suspension.maxDays) : config.suspension.defaultDays;
-      if (parsed === undefined) return reply(ctx.t(`${ns}.usage.suspend`));
+      if (parsed === undefined) return reply(ctx.t(`${ns}.usage.suspend`), withMessageSlot(`${ns}.usage.suspend`));
       days = parsed;
       if (/^\d/u.test(rest[0] ?? '')) reasonWords = rest.slice(1);
     }
     const reason = reasonWords.join(' ').trim();
-    if (!reason) return reply(ctx.t(`${ns}.reasonRequired`));
+    if (!reason) return reply(ctx.t(`${ns}.reasonRequired`), withMessageSlot(`${ns}.reasonRequired`));
     const t = ctx.t;
     const plan = await planCase(deps, {
       db, config, scopeId, scopeLabel: await scopeName(deps, scopeId), member, kind, reason, days,
@@ -205,13 +217,13 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
     if (isResult(prepared)) return prepared;
     const { config, db, scopeId } = prepared;
     const { member } = await targetMember(deps, ctx);
-    if (!member) return reply(ctx.t(`${ns}.usage.member`));
+    if (!member) return reply(ctx.t(`${ns}.usage.member`), withMessageSlot(`${ns}.usage.member`));
     const row = activeCase(db, scopeId, member.identityId);
-    if (!row) return reply(ctx.t(`${ns}.noCase`, { member: member.label }));
+    if (!row) return reply(ctx.t(`${ns}.noCase`, { member: member.label }), withMessageSlot(`${ns}.noCase`));
     const plan = await planRestore(deps, { db, config, scopeId, scopeLabel: await scopeName(deps, scopeId), caseRow: row, status: 'lifted', t: ctx.t });
     return reply(ctx.t(`${ns}.lifted`, {
       kind: ctx.t(`${ns}.kind.${row.kind}`), member: member.label, count: plan.readded.length, dry: dry(ctx, config)
-    }), plan.actions);
+    }), plan.actions, withMessageSlot(`${ns}.lifted`));
   });
 
   router.register('admin', 'extend', modCommand('extend', 'durable'), async (ctx) => {
@@ -219,11 +231,11 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
     if (isResult(prepared)) return prepared;
     const { config, db, scopeId } = prepared;
     const { member, rest } = await targetMember(deps, ctx);
-    if (!member) return reply(ctx.t(`${ns}.usage.extend`));
+    if (!member) return reply(ctx.t(`${ns}.usage.extend`), withMessageSlot(`${ns}.usage.extend`));
     const row = activeCase(db, scopeId, member.identityId);
-    if (!row || row.kind !== 'suspension' || !row.ends_at) return reply(ctx.t(`${ns}.noCase`, { member: member.label }));
+    if (!row || row.kind !== 'suspension' || !row.ends_at) return reply(ctx.t(`${ns}.noCase`, { member: member.label }), withMessageSlot(`${ns}.noCase`));
     const days = parseDays(rest[0], 0, config.suspension.maxDays);
-    if (!days) return reply(ctx.t(`${ns}.usage.extend`));
+    if (!days) return reply(ctx.t(`${ns}.usage.extend`), withMessageSlot(`${ns}.usage.extend`));
     const endsAt = new Date(Date.parse(row.ends_at) + days * DAY_MS);
     extendCase(db, row.id, endsAt);
     return reply(ctx.t(`${ns}.extended`, { member: member.label, until: formatDate(endsAt, ctx.locale) }), [
@@ -232,14 +244,14 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
         payload: { caseId: row.id }, dedupeKey: `${SUSPENSION_END_JOB}:${row.id}:${endsAt.toISOString()}` },
       { type: 'audit.record', action: 'moderation.suspension.extended', targetJson: { scopeId, identityId: row.identity_id, caseId: row.id },
         metadataJson: { endsAt: endsAt.toISOString() } }
-    ]);
+    ], withMessageSlot(`${ns}.extended`));
   });
 
   router.register('admin', 'cases', modCommand('cases', 'none'), async (ctx) => {
     const prepared = await prepare(deps, ctx);
     if (isResult(prepared)) return prepared;
     const rows = listActiveCases(prepared.db, prepared.scopeId);
-    if (rows.length === 0) return reply(ctx.t(`${ns}.cases.none`));
+    if (rows.length === 0) return reply(ctx.t(`${ns}.cases.none`), withMessageSlot(`${ns}.cases.none`));
     const lines = [ctx.t(`${ns}.cases.header`)];
     for (const row of rows) {
       const member = await memberById(deps, row.identity_id);
@@ -258,40 +270,40 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
     if (isResult(prepared)) return prepared;
     const { config, db, scopeId, actor } = prepared;
     const { member, rest } = await targetMember(deps, ctx);
-    if (!member) return reply(ctx.t(`${ns}.usage.member`));
-    if (await isProtected(deps, member) || await protectiveTarget(deps, scopeId, actor.identityId, member.identityId)) return reply(ctx.t(`${ns}.protectedMember`));
+    if (!member) return reply(ctx.t(`${ns}.usage.member`), withMessageSlot(`${ns}.usage.member`));
+    if (await isProtected(deps, member) || await protectiveTarget(deps, scopeId, actor.identityId, member.identityId)) return reply(ctx.t(`${ns}.protectedMember`), withMessageSlot(`${ns}.protectedMember`));
     const reason = rest.join(' ').trim();
-    if (!reason) return reply(ctx.t(`${ns}.reasonRequired`));
+    if (!reason) return reply(ctx.t(`${ns}.reasonRequired`), withMessageSlot(`${ns}.reasonRequired`));
     const audit: PluginAction = { type: 'audit.record', action: 'moderation.warning.given',
       targetJson: { scopeId, identityId: member.identityId }, metadataJson: { reason, dryRun: config.dryRun } };
-    if (config.dryRun) return reply(ctx.t(`${ns}.warned`, { member: member.label, count: activeWarnings(db, scopeId, member.identityId, nowFrom(deps)).length, dry: dry(ctx, config) }), [audit]);
+    if (config.dryRun) return reply(ctx.t(`${ns}.warned`, { member: member.label, count: activeWarnings(db, scopeId, member.identityId, nowFrom(deps)).length, dry: dry(ctx, config) }), [audit], withMessageSlot(`${ns}.warned`));
     const count = addWarning(db, { scopeId, identityId: member.identityId, source: 'admin', reason, actorIdentityId: actor.identityId, now: nowFrom(deps), ttlDays: config.warnings.ttlDays });
     const noticeT = await memberTranslator(deps, member.identityId, scopeId, ctx.t);
     const actions: PluginAction[] = [audit,
-      { type: 'message.sendText', chatId: member.deliveryChatId, text: noticeT(`${ns}.notice.warnedModerators`, { member: member.label, reason }) }];
+      { type: 'message.sendText', chatId: member.deliveryChatId, text: noticeT(`${ns}.notice.warnedModerators`, { member: member.label, reason }), ...withMessageSlot(`${ns}.notice.warnedModerators`) }];
     if (count >= config.warnings.alertAt) {
       actions.push(...alertActions(await adminRecipients(deps, config, scopeId, ctx.groupWid), ctx.t(`${ns}.alert.warningLimit`, { member: member.label, count })));
     }
-    return reply(ctx.t(`${ns}.warned`, { member: member.label, count, dry: '' }), actions);
+    return reply(ctx.t(`${ns}.warned`, { member: member.label, count, dry: '' }), actions, withMessageSlot(`${ns}.warned`));
   });
 
   router.register('admin', 'pardon', modCommand('pardon', 'durable'), async (ctx) => {
     const prepared = await prepare(deps, ctx);
     if (isResult(prepared)) return prepared;
     const { member, rest } = await targetMember(deps, ctx);
-    if (!member) return reply(ctx.t(`${ns}.usage.member`));
+    if (!member) return reply(ctx.t(`${ns}.usage.member`), withMessageSlot(`${ns}.usage.member`));
     const id = rest[0] && /^#?\d+$/u.test(rest[0]) ? Number(rest[0].replace('#', '')) : undefined;
     const count = prepared.config.dryRun ? 0 : pardonWarnings(prepared.db, prepared.scopeId, member.identityId, nowFrom(deps), id);
-    return reply(ctx.t(`${ns}.pardoned`, { member: member.label, count }));
+    return reply(ctx.t(`${ns}.pardoned`, { member: member.label, count }), withMessageSlot(`${ns}.pardoned`));
   });
 
   router.register('admin', 'warnings', modCommand('warnings', 'none'), async (ctx) => {
     const prepared = await prepare(deps, ctx);
     if (isResult(prepared)) return prepared;
     const { member } = await targetMember(deps, ctx);
-    if (!member) return reply(ctx.t(`${ns}.usage.member`));
+    if (!member) return reply(ctx.t(`${ns}.usage.member`), withMessageSlot(`${ns}.usage.member`));
     const rows = activeWarnings(prepared.db, prepared.scopeId, member.identityId, nowFrom(deps));
-    if (rows.length === 0) return reply(ctx.t(`${ns}.warnings.none`, { member: member.label }));
+    if (rows.length === 0) return reply(ctx.t(`${ns}.warnings.none`, { member: member.label }), withMessageSlot(`${ns}.warnings.none`));
     return reply([ctx.t(`${ns}.warnings.header`, { member: member.label }), ...rows.map((row) => ctx.t(`${ns}.warnings.item`, {
       id: row.id, date: formatDate(new Date(row.created_at), ctx.locale), reason: row.reason
     }))].join('\n'));
@@ -300,7 +312,7 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
   router.register('admin', 'lock', modCommand('lock', 'durable'), async (ctx) => {
     const prepared = await prepare(deps, ctx);
     if (isResult(prepared)) return prepared;
-    if (!ctx.groupWid) return reply(ctx.t(`${ns}.usage.lock`));
+    if (!ctx.groupWid) return reply(ctx.t(`${ns}.usage.lock`), withMessageSlot(`${ns}.usage.lock`));
     const rest = args(ctx);
     const minutes = /^\d+$/u.test(rest[0] ?? '') ? Math.min(Number(rest[0]), 7 * 24 * 60) : undefined;
     const until = minutes ? new Date(nowFrom(deps).getTime() + minutes * 60_000) : undefined;
@@ -321,12 +333,12 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
   router.register('admin', 'unlock', modCommand('unlock', 'durable'), async (ctx) => {
     const prepared = await prepare(deps, ctx);
     if (isResult(prepared)) return prepared;
-    if (!ctx.groupWid) return reply(ctx.t(`${ns}.usage.lock`));
+    if (!ctx.groupWid) return reply(ctx.t(`${ns}.usage.lock`), withMessageSlot(`${ns}.usage.lock`));
     const audit: PluginAction = { type: 'audit.record', action: 'moderation.unlock', targetJson: { scopeId: prepared.scopeId, groupWid: ctx.groupWid },
       metadataJson: { dryRun: prepared.config.dryRun } };
-    if (prepared.config.dryRun) return reply(ctx.t(`${ns}.unlocked`, { dry: dry(ctx, prepared.config) }), [audit]);
+    if (prepared.config.dryRun) return reply(ctx.t(`${ns}.unlocked`, { dry: dry(ctx, prepared.config) }), [audit], withMessageSlot(`${ns}.unlocked`));
     dropLock(prepared.db, ctx.groupWid);
-    return reply(ctx.t(`${ns}.unlocked`, { dry: '' }), [audit, { type: 'group.unlockMessages', groupWid: ctx.groupWid, reason: `${MODERATION_PLUGIN_ID}:manual` }]);
+    return reply(ctx.t(`${ns}.unlocked`, { dry: '' }), [audit, { type: 'group.unlockMessages', groupWid: ctx.groupWid, reason: `${MODERATION_PLUGIN_ID}:manual` }], withMessageSlot(`${ns}.unlocked`));
   });
 
   router.register('admin', 'test', modCommand('test', 'none'), async (ctx) => {
@@ -348,18 +360,18 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
     const rest = args(ctx);
     const id = Number((rest[0] ?? '').replace('#', ''));
     const action = (rest[1] ?? '').toLowerCase();
-    if (!Number.isSafeInteger(id) || !['delete', 'warn', 'suspend', 'expel', 'dismiss'].includes(action)) return reply(ctx.t(`${ns}.usage.resolve`));
+    if (!Number.isSafeInteger(id) || !['delete', 'warn', 'suspend', 'expel', 'dismiss'].includes(action)) return reply(ctx.t(`${ns}.usage.resolve`), withMessageSlot(`${ns}.usage.resolve`));
     const report = reportById(db, scopeId, id);
-    if (!report || report.status !== 'open') return reply(ctx.t(`${ns}.report.unknown`, { id }));
+    if (!report || report.status !== 'open') return reply(ctx.t(`${ns}.report.unknown`, { id }), withMessageSlot(`${ns}.report.unknown`));
     const now = nowFrom(deps);
     if (action === 'dismiss') {
       if (!config.dryRun) resolveReport(db, id, 'dismissed', 'dismiss', actor.identityId, now);
       return reply(ctx.t(`${ns}.report.dismissed`, { id }), [{ type: 'audit.record', action: 'moderation.report.dismissed',
-        targetJson: { scopeId, reportId: id }, metadataJson: { dryRun: config.dryRun } }]);
+        targetJson: { scopeId, reportId: id }, metadataJson: { dryRun: config.dryRun } }], withMessageSlot(`${ns}.report.dismissed`));
     }
     const author = report.author_identity_id ? await memberById(deps, report.author_identity_id) : undefined;
-    if (!author) return reply(ctx.t(`${ns}.unknownMember`));
-    if (await isProtected(deps, author) || await protectiveTarget(deps, scopeId, actor.identityId, author.identityId)) return reply(ctx.t(`${ns}.protectedMember`));
+    if (!author) return reply(ctx.t(`${ns}.unknownMember`), withMessageSlot(`${ns}.unknownMember`));
+    if (await isProtected(deps, author) || await protectiveTarget(deps, scopeId, actor.identityId, author.identityId)) return reply(ctx.t(`${ns}.protectedMember`), withMessageSlot(`${ns}.protectedMember`));
     const actions: PluginAction[] = [{ type: 'audit.record', action: `moderation.report.${action}`, targetJson: { scopeId, reportId: id, identityId: author.identityId },
       metadataJson: { dryRun: config.dryRun } }];
     if (!config.dryRun) {
@@ -369,7 +381,7 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
       if (action === 'warn') {
         addWarning(db, { scopeId, identityId: author.identityId, source: 'report', reason: `report #${id}`, actorIdentityId: actor.identityId, now, ttlDays: config.warnings.ttlDays });
         const noticeT = await memberTranslator(deps, author.identityId, scopeId, ctx.t);
-        actions.push({ type: 'message.sendText', chatId: author.deliveryChatId, text: noticeT(`${ns}.notice.warnedModerators`, { member: author.label, reason: `report #${id}` }) });
+        actions.push({ type: 'message.sendText', chatId: author.deliveryChatId, text: noticeT(`${ns}.notice.warnedModerators`, { member: author.label, reason: `report #${id}` }), ...withMessageSlot(`${ns}.notice.warnedModerators`) });
       }
       if (action === 'suspend' || action === 'expel') {
         const plan = await planCase(deps, { db, config, scopeId, scopeLabel: await scopeName(deps, scopeId), member: author,
@@ -378,19 +390,19 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
       }
       resolveReport(db, id, 'resolved', action, actor.identityId, now);
     }
-    return reply(ctx.t(`${ns}.report.resolved`, { id, action, dry: dry(ctx, config) }), actions);
+    return reply(ctx.t(`${ns}.report.resolved`, { id, action, dry: dry(ctx, config) }), actions, withMessageSlot(`${ns}.report.resolved`));
   });
 
   router.register('report', '*', REPORT_COMMAND, async (ctx) => {
     const scopeId = scopeOf(ctx);
-    if (!scopeId || !ctx.groupWid) return reply(ctx.t(`${ns}.report.needsReply`));
+    if (!scopeId || !ctx.groupWid) return reply(ctx.t(`${ns}.report.needsReply`), withMessageSlot(`${ns}.report.needsReply`));
     const reporterId = ctx.actor?.identityAddress.identityId;
     const config = await configFor(deps, scopeId, reporterId);
-    if (!config.enabled || !config.reports.enabled) return reply(ctx.t(`${ns}.report.disabled`));
+    if (!config.enabled || !config.reports.enabled) return reply(ctx.t(`${ns}.report.disabled`), withMessageSlot(`${ns}.report.disabled`));
     const db = database(deps);
-    if (!db) return reply(ctx.t(`${ns}.unavailable`));
+    if (!db) return reply(ctx.t(`${ns}.unavailable`), withMessageSlot(`${ns}.unavailable`));
     const quoted = ctx.message.replyTo;
-    if (!quoted?.messageId || !reporterId) return reply(ctx.t(`${ns}.report.needsReply`));
+    if (!quoted?.messageId || !reporterId) return reply(ctx.t(`${ns}.report.needsReply`), withMessageSlot(`${ns}.report.needsReply`));
     const author = quoted.snapshot?.authorWid ? await memberByWid(deps, quoted.snapshot.authorWid) : undefined;
     const reporter = await memberById(deps, reporterId);
     const { report, created } = addReport(db, {

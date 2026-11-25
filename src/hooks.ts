@@ -1,3 +1,4 @@
+import { withMessageSlot } from './messageSlot';
 import type { PluginAction } from '@wabs/plugin-sdk/actions';
 import type { PluginHookContext } from '@wabs/plugin-sdk/hook-plugin';
 import type { PluginJobEvent, PluginMessageEvent, PluginParticipantChangeEvent, PluginParticipantIdentity, PluginRuntimeHooks } from '@wabs/plugin-sdk/hooks';
@@ -147,7 +148,7 @@ function warnActions(
   return [{
     type: 'message.sendText',
     chatId: groupWid,
-    text: t(`${ns}.violation.warn`, { member: mention, rule: t(`${ns}.rule.${violation.source}`) }),
+    text: t(`${ns}.violation.warn`, { member: mention, rule: t(`${ns}.rule.${violation.source}`) }), ...withMessageSlot(`${ns}.violation.warn`),
     mentionedWids: [member.mentionWid]
   }];
 }
