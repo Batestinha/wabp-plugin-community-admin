@@ -28,6 +28,8 @@ export type DoasActionName =
   | 'join-approval'
   | 'disappearing'
   | 'report-to-admin'
+  | 'send-history'
+  | 'history-share'
   | 'invite-link'
   | 'revoke-invite'
   | 'unlink-community'
@@ -37,6 +39,7 @@ export type DoasActionName =
   | 'create-community'
   | 'create-child-group'
   | 'community-group-create'
+  | 'community-member-add'
   | 'dismantle-group'
   | 'dismantle-community';
 
@@ -93,6 +96,7 @@ const HIGH_RISK_ACTIONS = new Set<DoasActionName>([
   'promote',
   'demote',
   'add-history',
+  'send-history',
   'send',
   'send-media',
   'send-document',
@@ -106,6 +110,7 @@ const HIGH_RISK_ACTIONS = new Set<DoasActionName>([
   'create-community',
   'create-child-group',
   'community-group-create',
+  'community-member-add',
   'dismantle-group',
   'dismantle-community'
 ]);
@@ -117,12 +122,14 @@ const FANOUT_UNSUPPORTED_ACTIONS = new Set<DoasActionName>([
   'approve',
   'reject',
   'add-history',
+  'send-history',
   'invite-link',
   'create-group',
   'delete-chat',
   'create-community',
   'create-child-group',
   'community-group-create',
+  'community-member-add',
   'dismantle-community'
 ]);
 
@@ -219,6 +226,22 @@ export function planDoasActions(input: DoasPlanInput): DoasPlanResult {
         reason: input.text || 'doas add-history'
       }));
     }
+    case 'send-history': {
+      const userWids = uniqueStrings(input.userWids ?? (input.userWid ? [input.userWid] : []));
+      if (userWids.length === 0) {
+        return { ok: false, reason: 'users-required' };
+      }
+      if (!input.selectedMessageCount) {
+        return { ok: false, reason: 'invalid-value' };
+      }
+      return planGroupActions(input, (target) => ({
+        type: 'group.sendHistoryBundle',
+        groupWid: target.groupWid,
+        userWids,
+        selectedMessageCount: input.selectedMessageCount!,
+        reason: input.text || 'doas send-history'
+      } as unknown as PluginAction));
+    }
     case 'subject':
     case 'description':
       if (!input.text) {
@@ -244,7 +267,9 @@ export function planDoasActions(input: DoasPlanInput): DoasPlanResult {
     case 'member-add':
     case 'join-approval':
     case 'report-to-admin':
+    case 'history-share':
     case 'community-group-create':
+    case 'community-member-add':
       if (input.booleanValue === undefined) {
         return { ok: false, reason: 'value-required' };
       }
@@ -419,8 +444,22 @@ function booleanSettingAction(input: DoasPlanInput, target: DoasExecutionTarget,
       return { type: 'group.setMembershipApprovalMode', groupWid: target.groupWid, enabled: value, reason };
     case 'report-to-admin':
       return { type: 'group.setReportToAdminMode', groupWid: target.groupWid, enabled: value, reason };
+    case 'history-share':
+      return {
+        type: 'group.setHistoryShareMode',
+        groupWid: target.groupWid,
+        mode: value ? 'admin_share' : 'all_member_share',
+        reason
+      } as unknown as PluginAction;
     case 'community-group-create':
       return { type: 'community.setGroupCreateEveryoneAllowed', communityWid: target.groupWid, enabled: value, reason };
+    case 'community-member-add':
+      return {
+        type: 'community.setMemberAddEveryoneAllowed',
+        communityWid: target.groupWid,
+        enabled: value,
+        reason
+      } as unknown as PluginAction;
     default:
       throw new Error(`Unsupported doas boolean setting action: ${input.actionName}`);
   }
