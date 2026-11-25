@@ -48,6 +48,7 @@ export const doasManifest: PluginManifest = {
     '/admin reject',
     '/admin add',
     '/admin add-history',
+    '/admin send-history',
     '/admin remove',
     '/admin promote',
     '/admin demote',
@@ -61,6 +62,7 @@ export const doasManifest: PluginManifest = {
     '/admin join-approval',
     '/admin disappearing',
     '/admin report-to-admin',
+    '/admin history-share',
     '/admin invite-link',
     '/admin revoke-invite',
     '/admin unlink-community',
@@ -70,6 +72,7 @@ export const doasManifest: PluginManifest = {
     '/admin create-community',
     '/admin subgroup',
     '/admin community-group-create',
+    '/admin community-member-add',
     '/admin dismantle-group',
     '/admin dismantle-community'
   ],
@@ -94,7 +97,7 @@ export const doasManifest: PluginManifest = {
         titleKey: 'official.community-admin.actions.help.topic.members.title',
         summaryKey: 'official.community-admin.actions.help.topic.members.summary',
         order: 20,
-        commands: ['/admin approve', '/admin reject', '/admin add', '/admin add-history', '/admin remove', '/admin promote', '/admin demote', '/admin member-add', '/admin join-approval'],
+        commands: ['/admin approve', '/admin reject', '/admin add', '/admin add-history', '/admin send-history', '/admin remove', '/admin promote', '/admin demote', '/admin member-add', '/admin join-approval'],
         instructionKeys: ['official.community-admin.actions.help.topic.members.instruction'],
         keywords: ['member', 'participant', 'approve', 'remove', 'admin']
       },
@@ -103,7 +106,7 @@ export const doasManifest: PluginManifest = {
         titleKey: 'official.community-admin.actions.help.topic.settings.title',
         summaryKey: 'official.community-admin.actions.help.topic.settings.summary',
         order: 30,
-        commands: ['/admin status', '/admin title', '/admin description', '/admin picture', '/admin picture-clear', '/admin info-lock', '/admin info-unlock', '/admin disappearing', '/admin report-to-admin'],
+        commands: ['/admin status', '/admin title', '/admin description', '/admin picture', '/admin picture-clear', '/admin info-lock', '/admin info-unlock', '/admin disappearing', '/admin report-to-admin', '/admin history-share'],
         instructionKeys: ['official.community-admin.actions.help.topic.settings.instruction'],
         keywords: ['settings', 'profile', 'subject', 'description', 'privacy']
       },
@@ -121,7 +124,7 @@ export const doasManifest: PluginManifest = {
         titleKey: 'official.community-admin.actions.help.topic.communities.title',
         summaryKey: 'official.community-admin.actions.help.topic.communities.summary',
         order: 50,
-        commands: ['/admin unlink-community', '/admin create-community', '/admin subgroup', '/admin community-group-create', '/admin dismantle-community'],
+        commands: ['/admin unlink-community', '/admin create-community', '/admin subgroup', '/admin community-group-create', '/admin community-member-add', '/admin dismantle-community'],
         instructionKeys: ['official.community-admin.actions.help.topic.communities.instruction'],
         keywords: ['community', 'child group', 'unlink', 'create']
       },
@@ -177,6 +180,8 @@ export const doasManifest: PluginManifest = {
     'group.setMembershipApprovalMode',
     'group.setDisappearingMessages',
     'group.setReportToAdminMode',
+    'group.setHistoryShareMode',
+    'group.sendHistoryBundle',
     'group.setPicture',
     'group.deletePicture',
     'group.approveMembershipRequest',
@@ -187,6 +192,7 @@ export const doasManifest: PluginManifest = {
     'community.create',
     'community.createChildGroup',
     'community.setGroupCreateEveryoneAllowed',
+    'community.setMemberAddEveryoneAllowed',
     'group.dismantle',
     'community.dismantle',
     'chat.delete'
@@ -225,17 +231,17 @@ export const doasManifest: PluginManifest = {
       {
         intent: 'doas_membership',
         description: 'Approve, reject, add, or remove members through bot-mediated admin actions.',
-        commands: ['/admin approve', '/admin reject', '/admin add', '/admin add-history', '/admin remove', '/admin member-add', '/admin join-approval']
+        commands: ['/admin approve', '/admin reject', '/admin add', '/admin add-history', '/admin send-history', '/admin remove', '/admin member-add', '/admin join-approval']
       },
       {
         intent: 'doas_profile',
         description: 'Change group subject, description, or info edit lock state.',
-        commands: ['/admin title', '/admin description', '/admin picture', '/admin picture-clear', '/admin info-lock', '/admin info-unlock', '/admin disappearing', '/admin report-to-admin', '/admin invite-link']
+        commands: ['/admin title', '/admin description', '/admin picture', '/admin picture-clear', '/admin info-lock', '/admin info-unlock', '/admin disappearing', '/admin report-to-admin', '/admin history-share', '/admin invite-link']
       },
       {
         intent: 'doas_admin',
         description: 'Promote or demote group admins with explicit confirmation.',
-        commands: ['/admin promote', '/admin demote', '/admin create-group', '/admin create-community', '/admin subgroup', '/admin community-group-create']
+        commands: ['/admin promote', '/admin demote', '/admin create-group', '/admin create-community', '/admin subgroup', '/admin community-group-create', '/admin community-member-add']
       }
     ]
   }

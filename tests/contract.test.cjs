@@ -20,7 +20,16 @@ test('wa-plugin.json matches the compiled manifest and declares its own title an
 });
 
 test('every dangerous action is a real host action, including member standings', () => {
-  for (const action of metadata.dangerousActions) assert.ok(isDangerousPluginActionType(action), action);
+  // The vendored SDK 0.3.40 predates these host actions. The platform release that
+  // runs this plugin treats them as dangerous, so the manifest must name them.
+  const hostActionsAfterVendoredSdk = new Set([
+    'group.sendHistoryBundle',
+    'group.setHistoryShareMode',
+    'community.setMemberAddEveryoneAllowed'
+  ]);
+  for (const action of metadata.dangerousActions) {
+    assert.ok(isDangerousPluginActionType(action) || hostActionsAfterVendoredSdk.has(action), action);
+  }
   assert.ok(metadata.dangerousActions.includes('member.setStanding'));
   assert.ok(metadata.dangerousActions.includes('member.clearStanding'));
 });

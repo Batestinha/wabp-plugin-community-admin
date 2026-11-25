@@ -13,7 +13,7 @@ import { resolveDoasFanoutTargets, type DoasFanoutMode } from './targetResolver'
 const widSchema = z.string().min(3).max(160).regex(/^[^\s]+$/);
 const fanoutSchema = z.enum(['none', 'children', 'all']);
 const participantFilterSchema = z.enum(['all', 'admins', 'members', 'normal-members', 'super-admins', 'explicit']);
-const participantActionSchema = z.enum(['approve', 'reject', 'add', 'promote', 'demote', 'remove']);
+const participantActionSchema = z.enum(['approve', 'reject', 'add', 'promote', 'demote', 'remove', 'send-history']);
 const groupActionSchema = z.enum([
   'lock',
   'unlock',
@@ -24,12 +24,14 @@ const groupActionSchema = z.enum([
   'join-approval',
   'disappearing',
   'report-to-admin',
+  'history-share',
   'picture-clear',
   'revoke-invite',
   'unlink-community',
   'leave',
   'delete-chat',
   'community-group-create',
+  'community-member-add',
   'dismantle-group',
   'dismantle-community',
   'subject',
@@ -43,6 +45,7 @@ const destructiveBotTargetParticipantActions = new Set<z.infer<typeof participan
 const groupToolFanoutUnsupportedActions = new Set<z.infer<typeof groupActionSchema>>([
   'delete-chat',
   'community-group-create',
+  'community-member-add',
   'dismantle-community'
 ]);
 
@@ -69,6 +72,7 @@ const participantExecuteInputSchema = z.object({
     userWids: z.array(widSchema).min(1).max(250)
   }).strict()).min(1).max(50),
   reason: z.string().min(1).max(500).optional(),
+  selectedMessageCount: z.union([z.literal(25), z.literal(50), z.literal(100)]).optional(),
   exclude: exclusionsSchema
 }).strict();
 
@@ -188,7 +192,7 @@ function participantExecuteTool(
   return {
     descriptor: {
       name: 'official.community-admin.participants.execute',
-      description: 'Execute exact participant DoAS actions after a preview: approve, reject, add, promote, demote, or remove specified WIDs. Revalidates destructive current-member actions before returning audited group actions.',
+      description: 'Execute exact participant DoAS actions after a preview: approve, reject, add, promote, demote, remove, or send-history for specified WIDs. send-history shares WhatsApp’s recent history with someone already in the group and does not turn history sending on. Revalidates destructive current-member actions before returning audited group actions.',
       pluginId: DOAS_PLUGIN_ID,
       inputSchema: participantExecuteInputJsonSchema(),
       outputSchema: executeOutputJsonSchema(),
@@ -243,7 +247,7 @@ function participantExecuteTool(
       throwIfAborted(toolContext.signal);
       if (!participantActionNeedsCurrentMember(input.action)) {
         const actions = input.targets.flatMap((target) =>
-          target.userWids.map((userWid) => participantAction(input.action, target.groupWid, userWid, input.reason))
+          target.userWids.map((userWid) => participantAction(input.action, target.groupWid, userWid, input.reason, input.selectedMessageCount))
         );
         return {
           content: {
@@ -276,7 +280,7 @@ function participantExecuteTool(
         }, `Target set changed since preview: ${mismatch}. Preview again before executing.`)) };
       }
       const actions = selection.flatMap((entry) =>
-        entry.selected.map((participant) => participantAction(input.action, entry.group.groupWid, participant.wid, input.reason))
+        entry.selected.map((participant) => participantAction(input.action, entry.group.groupWid, participant.wid, input.reason, input.selectedMessageCount))
       );
       return {
         content: executionContent(toolContext, input.action, selection, actions.length, groups.warnings, true),
@@ -315,7 +319,7 @@ function groupExecuteTool(
   return {
     descriptor: {
       name: 'official.community-admin.group.execute',
-      description: 'Execute group-level DoAS actions such as locks, invite revocation, subject, description, admission settings, retention, reporting, picture clear, delete-chat, or community group-add settings across the current group or configured community fan-out.',
+      description: 'Execute group-level DoAS actions such as locks, invite revocation, subject, description, admission settings, retention, reporting, history-share, picture clear, delete-chat, or community group-create and member-add settings across the current group or configured community fan-out. history-share chooses who may share message history and does not turn history sending on. community-member-add is often rejected by WhatsApp.',
       pluginId: DOAS_PLUGIN_ID,
       inputSchema: groupExecuteInputJsonSchema(),
       outputSchema: executeOutputJsonSchema(),
@@ -594,6 +598,7 @@ function actionEligibilityForParticipantAction(action: z.infer<typeof participan
     case 'demote':
       return (participant) => participant.isAdmin || participant.isSuperAdmin;
     case 'remove':
+    case 'send-history':
       return () => true;
   }
 }
@@ -648,7 +653,8 @@ function participantAction(
   action: z.infer<typeof participantActionSchema>,
   groupWid: string,
   userWid: string,
-  reason?: string | undefined
+  reason?: string | undefined,
+  selectedMessageCount?: 25 | 50 | 100 | undefined
 ): PluginAction {
   const actionReason = reason ?? `assistant doas ${action}`;
   switch (action) {
@@ -664,11 +670,19 @@ function participantAction(
       return { type: 'group.demoteParticipant', groupWid, userWid, reason: actionReason };
     case 'remove':
       return { type: 'group.removeParticipant', groupWid, userWid, reason: actionReason };
+    case 'send-history':
+      return {
+        type: 'group.sendHistoryBundle',
+        groupWid,
+        userWids: [userWid],
+        selectedMessageCount: selectedMessageCount ?? 100,
+        reason: actionReason
+      } as unknown as PluginAction;
   }
 }
 
 function participantActionNeedsCurrentMember(action: z.infer<typeof participantActionSchema>): boolean {
-  return action === 'promote' || action === 'demote' || action === 'remove';
+  return action === 'promote' || action === 'demote' || action === 'remove' || action === 'send-history';
 }
 
 async function dynamicPermissionAllowed(
@@ -707,6 +721,7 @@ function permissionForParticipantAction(action: z.infer<typeof participantAction
     case 'reject':
     case 'add':
     case 'remove':
+    case 'send-history':
       return DOAS_PERMISSIONS.membership;
   }
 }
@@ -716,10 +731,12 @@ function permissionForGroupAction(action: z.infer<typeof groupActionSchema>): st
     case 'delete-chat':
       return DOAS_PERMISSIONS.chatDelete;
     case 'community-group-create':
+    case 'community-member-add':
       return DOAS_PERMISSIONS.communitySettings;
     case 'disappearing':
       return DOAS_PERMISSIONS.retention;
     case 'report-to-admin':
+    case 'history-share':
       return DOAS_PERMISSIONS.privacy;
     case 'picture-clear':
       return DOAS_PERMISSIONS.mediaProfile;
@@ -776,6 +793,13 @@ function groupAction(input: GroupExecuteInput, groupWid: string, parentCommunity
       return { type: 'group.setDisappearingMessages', groupWid, durationSeconds: input.durationSeconds!, reason };
     case 'report-to-admin':
       return { type: 'group.setReportToAdminMode', groupWid, enabled: input.enabled!, reason };
+    case 'history-share':
+      return {
+        type: 'group.setHistoryShareMode',
+        groupWid,
+        mode: input.enabled ? 'admin_share' : 'all_member_share',
+        reason
+      } as unknown as PluginAction;
     case 'picture-clear':
       return { type: 'group.deletePicture', groupWid, reason };
     case 'revoke-invite':
@@ -786,6 +810,13 @@ function groupAction(input: GroupExecuteInput, groupWid: string, parentCommunity
       return { type: 'chat.delete', chatId: groupWid, reason };
     case 'community-group-create':
       return { type: 'community.setGroupCreateEveryoneAllowed', communityWid: groupWid, enabled: input.enabled!, reason };
+    case 'community-member-add':
+      return {
+        type: 'community.setMemberAddEveryoneAllowed',
+        communityWid: groupWid,
+        enabled: input.enabled!,
+        reason
+      } as unknown as PluginAction;
     case 'dismantle-group':
       return { type: 'group.dismantle', groupWid, reason };
     case 'dismantle-community':
@@ -806,7 +837,9 @@ function booleanGroupAction(action: z.infer<typeof groupActionSchema>): boolean 
   return action === 'member-add' ||
     action === 'join-approval' ||
     action === 'report-to-admin' ||
-    action === 'community-group-create';
+    action === 'community-group-create' ||
+    action === 'community-member-add' ||
+    action === 'history-share';
 }
 
 function previewContent(toolContext: AssistantToolContext, selection: ParticipantSelection[], warnings: string[]): PreviewOutput {

@@ -50,6 +50,8 @@ export const DOAS_ACTIONS = [
   'join-approval',
   'disappearing',
   'report-to-admin',
+  'send-history',
+  'history-share',
   'invite-link',
   'revoke-invite',
   'unlink-community',
@@ -59,6 +61,7 @@ export const DOAS_ACTIONS = [
   'create-community',
   'create-child-group',
   'community-group-create',
+  'community-member-add',
   'dismantle-group',
   'dismantle-community'
 ] as const satisfies readonly DoasActionName[];
@@ -318,6 +321,24 @@ export const DOAS_COMMAND_METADATA = {
     dangerous: true,
     requiresManagedGroup: true
   },
+  'send-history': {
+    topic: 'members',
+    usage: '/admin send-history @person [@person ...] [--history 25|50|100] [--comment <text>] [--chat <group>] [--confirm]',
+    descriptionKey: 'official.community-admin.actions.help.send-history.description',
+    exampleKey: 'official.community-admin.actions.help.send-history.example',
+    mutation: 'durable',
+    dangerous: true,
+    requiresManagedGroup: true
+  },
+  'history-share': {
+    topic: 'settings',
+    usage: '/admin history-share all|admins [reason] [--chat <group>] [--fanout children|all] [--confirm]',
+    descriptionKey: 'official.community-admin.actions.help.history-share.description',
+    exampleKey: 'official.community-admin.actions.help.history-share.example',
+    mutation: 'durable',
+    dangerous: true,
+    requiresManagedGroup: true
+  },
   'invite-link': {
     topic: 'invites',
     usage: '/admin invite-link [--chat <group>]',
@@ -399,6 +420,15 @@ export const DOAS_COMMAND_METADATA = {
     dangerous: true,
     requiresManagedGroup: true
   },
+  'community-member-add': {
+    topic: 'communities',
+    usage: '/admin community-member-add everyone|admins [reason] [--chat <community>] [--confirm]',
+    descriptionKey: 'official.community-admin.actions.help.community-member-add.description',
+    exampleKey: 'official.community-admin.actions.help.community-member-add.example',
+    mutation: 'durable',
+    dangerous: true,
+    requiresManagedGroup: true
+  },
   'dismantle-group': {
     topic: 'lifecycle',
     usage: '/admin dismantle-group [reason] [--chat <group>] [--fanout children|all] [--confirm]',
@@ -419,17 +449,18 @@ export const DOAS_COMMAND_METADATA = {
   }
 } as const satisfies Record<DoasCommandName, DoasCommandMetadata>;
 
-const MEMBERSHIP_ACTIONS = new Set<DoasActionName>(['approve', 'reject', 'add', 'add-history', 'remove']);
+const MEMBERSHIP_ACTIONS = new Set<DoasActionName>(['approve', 'reject', 'add', 'add-history', 'send-history', 'remove']);
 const ADMIN_ACTIONS = new Set<DoasActionName>(['promote', 'demote']);
 const PROFILE_ACTIONS = new Set<DoasActionName>(['subject', 'description', 'info-lock', 'info-unlock']);
 const MESSAGE_PIN_ACTIONS = new Set<DoasActionName>(['pin', 'unpin']);
 const MESSAGE_SEND_ACTIONS = new Set<DoasActionName>(['send', 'send-media', 'send-document']);
 const RETENTION_ACTIONS = new Set<DoasActionName>(['disappearing']);
-const PRIVACY_ACTIONS = new Set<DoasActionName>(['report-to-admin', 'member-add', 'join-approval', 'revoke-invite']);
+const PRIVACY_ACTIONS = new Set<DoasActionName>(['report-to-admin', 'history-share', 'member-add', 'join-approval', 'revoke-invite']);
 const MEDIA_PROFILE_ACTIONS = new Set<DoasActionName>(['picture', 'picture-clear']);
 const COMMUNITY_ACTIONS = new Set<DoasActionName>([
   'unlink-community',
   'community-group-create',
+  'community-member-add',
   'dismantle-community'
 ]);
 const ADMIN_LIFECYCLE_ACTIONS = new Set<DoasActionName>(['leave', 'dismantle-group', 'delete-chat']);
@@ -620,6 +651,8 @@ function requiredBotCapabilitiesFor(commandName: DoasCommandName): Array<keyof G
     case 'member-add':
     case 'create-child-group':
       return ['botIsAdmin', 'canAddMembers'];
+    case 'send-history':
+      return ['botIsAdmin'];
     case 'remove':
       return ['botIsAdmin', 'canRemoveMembers'];
     case 'promote':
@@ -641,7 +674,9 @@ function requiredBotCapabilitiesFor(commandName: DoasCommandName): Array<keyof G
     case 'unlock':
     case 'disappearing':
     case 'report-to-admin':
+    case 'history-share':
     case 'community-group-create':
+    case 'community-member-add':
     case 'unlink-community':
     case 'leave':
     case 'dismantle-group':
@@ -684,7 +719,7 @@ function permissionForAction(actionName: DoasActionName): string {
   if (actionName === 'create-community' || actionName === 'create-child-group') {
     return DOAS_PERMISSIONS.communityCreate;
   }
-  if (actionName === 'community-group-create') {
+  if (actionName === 'community-group-create' || actionName === 'community-member-add') {
     return DOAS_PERMISSIONS.communitySettings;
   }
   if (actionName === 'delete-chat') {
@@ -849,6 +884,9 @@ function actionInputFor(
   if (actionName === 'add-history') {
     return addHistoryInputFor(ctx, args);
   }
+  if (actionName === 'send-history') {
+    return sendHistoryInputFor(ctx, args);
+  }
   if ((MEMBERSHIP_ACTIONS.has(actionName) && actionName !== 'member-add' && actionName !== 'join-approval') || ADMIN_ACTIONS.has(actionName)) {
     const parsedUser = parseUserArg(ctx, args);
     const text = args.slice(parsedUser.consumedArgs).join(' ').trim();
@@ -857,13 +895,13 @@ function actionInputFor(
       ...(text ? { text } : {})
     };
   }
-  if (actionName === 'member-add') {
+  if (actionName === 'member-add' || actionName === 'history-share') {
     return booleanValueInput(args, memberAddPermissionValue(args[0]));
   }
   if (actionName === 'join-approval' || actionName === 'report-to-admin') {
     return booleanValueInput(args, onOffValue(args[0]));
   }
-  if (actionName === 'community-group-create') {
+  if (actionName === 'community-group-create' || actionName === 'community-member-add') {
     return booleanValueInput(args, communityGroupCreateValue(args[0]));
   }
   if (actionName === 'disappearing') {
@@ -908,6 +946,16 @@ function parseUserArg(ctx: CommandContext, args: string[]): { userWid?: string |
   return args[0]
     ? { userWid: args[0], consumedArgs: 1 }
     : { consumedArgs: 0 };
+}
+
+function sendHistoryInputFor(ctx: CommandContext, args: string[]): DoasActionInput {
+  const hasCount = args.some((arg) => arg === '--history' || arg.startsWith('--history=') || arg === '--count' || arg.startsWith('--count='));
+  const input = addHistoryInputFor(ctx, hasCount ? args : ['--history', '100', ...args]);
+  return {
+    ...(input.userWids ? { userWids: input.userWids } : {}),
+    ...(input.selectedMessageCount ? { selectedMessageCount: input.selectedMessageCount } : {}),
+    ...(input.text ? { text: input.text } : {})
+  };
 }
 
 function addHistoryInputFor(ctx: CommandContext, args: string[]): DoasActionInput {

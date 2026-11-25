@@ -8,7 +8,7 @@
   },
   "description": "Manages group membership, join requests, settings and subgroups. Administrators with the appropriate role can moderate messages, review reports, warn members, and suspend or expel them.",
   "kind": "managed_group",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "coreApiRange": "^0.3.29",
   "entrypoint": "dist/index.js",
   "messageNamespace": "official.community-admin",
@@ -38,6 +38,7 @@
     "/admin reject",
     "/admin add",
     "/admin add-history",
+    "/admin send-history",
     "/admin remove",
     "/admin promote",
     "/admin demote",
@@ -51,6 +52,7 @@
     "/admin join-approval",
     "/admin disappearing",
     "/admin report-to-admin",
+    "/admin history-share",
     "/admin invite-link",
     "/admin revoke-invite",
     "/admin unlink-community",
@@ -60,6 +62,7 @@
     "/admin create-community",
     "/admin subgroup",
     "/admin community-group-create",
+    "/admin community-member-add",
     "/admin dismantle-group",
     "/admin dismantle-community",
     "/group create"
@@ -118,6 +121,7 @@
           "/admin reject",
           "/admin add",
           "/admin add-history",
+          "/admin send-history",
           "/admin remove",
           "/admin promote",
           "/admin demote",
@@ -149,7 +153,8 @@
           "/admin info-lock",
           "/admin info-unlock",
           "/admin disappearing",
-          "/admin report-to-admin"
+          "/admin report-to-admin",
+          "/admin history-share"
         ],
         "instructionKeys": [
           "official.community-admin.actions.help.topic.settings.instruction"
@@ -190,6 +195,7 @@
           "/admin create-community",
           "/admin subgroup",
           "/admin community-group-create",
+          "/admin community-member-add",
           "/admin dismantle-community"
         ],
         "instructionKeys": [
@@ -452,6 +458,8 @@
     "group.setMembershipApprovalMode",
     "group.setDisappearingMessages",
     "group.setReportToAdminMode",
+    "group.setHistoryShareMode",
+    "group.sendHistoryBundle",
     "group.setPicture",
     "group.deletePicture",
     "group.approveMembershipRequest",
@@ -461,6 +469,7 @@
     "community.create",
     "community.createChildGroup",
     "community.setGroupCreateEveryoneAllowed",
+    "community.setMemberAddEveryoneAllowed",
     "group.dismantle",
     "community.dismantle",
     "chat.delete"
@@ -590,6 +599,7 @@
       "creationPolicy.disappearingMessages",
       "creationPolicy.parentGroupCreatePermission",
       "creationPolicy.parentMemberAddPermission",
+      "creationPolicy.historySharePermission",
       "joinApproval.policy",
       "joinApproval.autoApprove",
       "dryRun",
@@ -966,6 +976,42 @@
             }
           ],
           "helpText": "Set the disappearing-message timer for new subgroups."
+        }
+      },
+      {
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.creationPolicy.historySharePermission",
+        "path": "creationPolicy.historySharePermission",
+        "label": "Who can share message history",
+        "description": "Choose who may share this group's message history when WhatsApp offers that choice. This does not turn on WhatsApp's history-sending feature.",
+        "section": "Group creation",
+        "order": 160,
+        "schema": {
+          "type": "enum",
+          "enum": [
+            {
+              "value": "all_members",
+              "label": "All members"
+            },
+            {
+              "value": "admins_only",
+              "label": "Only admins"
+            }
+          ]
+        },
+        "ui": {
+          "widget": "select",
+          "options": [
+            {
+              "value": "all_members",
+              "label": "All members"
+            },
+            {
+              "value": "admins_only",
+              "label": "Only admins"
+            }
+          ],
+          "helpText": "Choose who may share message history when WhatsApp offers that choice. This does not turn history sending on."
         }
       },
       {

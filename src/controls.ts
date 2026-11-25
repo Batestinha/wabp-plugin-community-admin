@@ -233,6 +233,41 @@ const groupCreationControls: ModerationControl[] = [
     }
   },
   {
+    "id": "plugin.official.community-admin.creationPolicy.historySharePermission",
+    "path": "creationPolicy.historySharePermission",
+    "label": "Who can share message history",
+    "description": "Choose who may share this group's message history when WhatsApp offers that choice. This does not turn on WhatsApp's history-sending feature.",
+    "section": "Group creation",
+    "order": 160,
+    "schema": {
+      "type": "enum",
+      "enum": [
+        {
+          "value": "all_members",
+          "label": "All members"
+        },
+        {
+          "value": "admins_only",
+          "label": "Only admins"
+        }
+      ]
+    },
+    "ui": {
+      "widget": "select",
+      "options": [
+        {
+          "value": "all_members",
+          "label": "All members"
+        },
+        {
+          "value": "admins_only",
+          "label": "Only admins"
+        }
+      ],
+      "helpText": "Choose who may share message history when WhatsApp offers that choice. This does not turn history sending on."
+    }
+  },
+  {
     "id": "plugin.official.community-admin.creationPolicy.parentGroupCreatePermission",
     "path": "creationPolicy.parentGroupCreatePermission",
     "label": "Who can create groups",
