@@ -1,6 +1,6 @@
 {
   "name": "@wabs/plugin-community-admin",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Manages group membership, join requests, settings and subgroups. Administrators with the appropriate role can moderate messages, review reports, warn members, and suspend or expel them.",
   "license": "MIT",
   "private": true,

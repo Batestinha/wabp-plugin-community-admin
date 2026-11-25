@@ -366,8 +366,9 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
     const now = nowFrom(deps);
     if (action === 'dismiss') {
       if (!config.dryRun) resolveReport(db, id, 'dismissed', 'dismiss', actor.identityId, now);
-      return reply(ctx.t(`${ns}.report.dismissed`, { id }), [{ type: 'audit.record', action: 'moderation.report.dismissed',
-        targetJson: { scopeId, reportId: id }, metadataJson: { dryRun: config.dryRun } }], withMessageSlot(`${ns}.report.dismissed`));
+      const key = config.dryRun ? `${ns}.report.dismissDryRun` : `${ns}.report.dismissed`;
+      return reply(ctx.t(key, { id }), [{ type: 'audit.record', action: 'moderation.report.dismissed',
+        targetJson: { scopeId, reportId: id }, metadataJson: { dryRun: config.dryRun } }], withMessageSlot(key));
     }
     const author = report.author_identity_id ? await memberById(deps, report.author_identity_id) : undefined;
     if (!author) return reply(ctx.t(`${ns}.unknownMember`), withMessageSlot(`${ns}.unknownMember`));

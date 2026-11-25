@@ -238,6 +238,29 @@ test('a report is anonymous in the group and reaches the community admins privat
   assert.match(again.text, /no open report #1/u);
 });
 
+test('dismissing a report tells the moderator whether it remains open', async () => {
+  const config = { dryRun: true };
+  const h = community(config);
+  const group = { groupWid: 'main@g.us' };
+  await run(h, eva, '/report', { ...group, replyTo: { messageId: 'reported-1' } });
+
+  const simulated = await run(h, ana, '/admin resolve 1 dismiss', group);
+  assert.equal(simulated.text, 'Dry run. Report #1 remains open.');
+  assert.equal(simulated.messageSlot.key, 'official.community-admin.report.dismissDryRun');
+  assert.deepEqual(simulated.pluginActions, [{
+    type: 'audit.record', action: 'moderation.report.dismissed',
+    targetJson: { scopeId: 'scope-1', reportId: 1 }, metadataJson: { dryRun: true }
+  }]);
+  assert.match((await run(h, ana, '/admin status', group)).text, /Open reports: 1\./u);
+
+  config.dryRun = false;
+  const dismissed = await run(h, ana, '/admin resolve 1 dismiss', group);
+  assert.equal(dismissed.text, 'Report #1 dismissed.');
+  assert.equal(dismissed.messageSlot.key, 'official.community-admin.report.dismissed');
+  assert.equal(dismissed.pluginActions[0].metadataJson.dryRun, false);
+  assert.match((await run(h, ana, '/admin status', group)).text, /Open reports: 0\./u);
+});
+
 test('groups outside MANAGE mode are left alone', async () => {
   const h = community();
   const result = await run(h, ana, '/admin expel spam', { groupWid: 'main@g.us', mentions: [rui] });

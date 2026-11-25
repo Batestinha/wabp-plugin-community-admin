@@ -87,6 +87,7 @@
   "official.community-admin.report.unknown": "Não há nenhuma denúncia aberta #{id}.",
   "official.community-admin.report.resolved": "Denúncia #{id}: {action} feito.{dry}",
   "official.community-admin.report.dismissed": "Denúncia #{id} arquivada.",
+  "official.community-admin.report.dismissDryRun": "Simulação. A denúncia #{id} continua aberta.",
   "official.community-admin.violation.warn": "{member}, respeita as regras do grupo, por favor ({rule}).",
   "official.community-admin.rule.invite-link": "sem links de convite para grupos",
   "official.community-admin.rule.link": "links desse site não são permitidos",
