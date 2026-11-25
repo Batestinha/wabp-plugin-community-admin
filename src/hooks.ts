@@ -1,6 +1,6 @@
 import type { PluginAction } from '@wabs/plugin-sdk/actions';
 import type { PluginHookContext } from '@wabs/plugin-sdk/hook-plugin';
-import type { PluginJobEvent, PluginMessageEvent, PluginParticipantChangeEvent, PluginRuntimeHooks } from '@wabs/plugin-sdk/hooks';
+import type { PluginJobEvent, PluginMessageEvent, PluginParticipantChangeEvent, PluginParticipantIdentity, PluginRuntimeHooks } from '@wabs/plugin-sdk/hooks';
 import type { TranslateFn } from '@wabs/plugin-sdk/i18n';
 import type { ModerationConfig, RulePolicy } from './config';
 import { LOCK_EXPIRE_JOB, MODERATION_NAMESPACE as ns, MODERATION_PLUGIN_ID, SUSPENSION_END_JOB } from './constants';
@@ -175,6 +175,64 @@ async function isModerator(context: HookContext, scopeId: string, member: Member
   return holders === undefined || holders.has(member.identityId);
 }
 
+/**
+ * Pending join requests are the people to approve. A link request names the requester.
+ * An admin add names the adder and leaves recipients empty, so the notification alone approves the wrong person.
+ * A missing or empty read keeps the named people: the list can lag the notification for a real requester.
+ */
+async function membershipRequestIdentities(context: HookContext, event: PluginParticipantChangeEvent): Promise<PluginParticipantIdentity[]> {
+  const pending = await pendingMembershipWids(context, event.groupWid!);
+  if (!pending?.length) return event.affectedIdentities;
+  const seen = new Set<string>();
+  const identities: PluginParticipantIdentity[] = [];
+  for (const wid of pending) {
+    const identity = await identityForPendingWid(context, wid);
+    if (seen.has(identity.identityId)) continue;
+    seen.add(identity.identityId);
+    identities.push(identity);
+  }
+  return identities;
+}
+
+async function pendingMembershipWids(context: HookContext, groupWid: string): Promise<string[] | undefined> {
+  if (!context.getGroupMembershipRequests) return undefined;
+  try {
+    const rows = await context.getGroupMembershipRequests(groupWid);
+    return [...new Set(rows.map((row) => row.wid.trim()).filter(Boolean))];
+  } catch {
+    return undefined;
+  }
+}
+
+async function identityForPendingWid(context: HookContext, wid: string): Promise<PluginParticipantIdentity> {
+  if (!context.resolveIdentityAddress) return unresolvedPendingIdentity(wid);
+  try {
+    const resolution = await context.resolveIdentityAddress(wid);
+    return {
+      identityId: resolution.identityId,
+      ...(resolution.displayName ? { displayName: resolution.displayName } : {}),
+      sourceWid: wid,
+      deliveryChatId: resolution.deliveryChatId,
+      canonicalWid: resolution.canonicalWid,
+      mentionWid: resolution.mentionWid,
+      addressBookWid: resolution.addressBookWid
+    };
+  } catch {
+    return unresolvedPendingIdentity(wid);
+  }
+}
+
+function unresolvedPendingIdentity(wid: string): PluginParticipantIdentity {
+  return {
+    identityId: `pending:${wid}`,
+    sourceWid: wid,
+    deliveryChatId: wid,
+    canonicalWid: wid,
+    mentionWid: wid,
+    addressBookWid: wid
+  };
+}
+
 export async function handleParticipantChange(context: HookContext, event: PluginParticipantChangeEvent): Promise<PluginAction[] | void> {
   if (!event.groupWid) return;
   if (event.action === 'promote' || event.action === 'demote') {
@@ -195,7 +253,9 @@ export async function handleParticipantChange(context: HookContext, event: Plugi
   const mode = event.managementMode ?? 'OBSERVE';
 
   const standing = await context.memberStandingsForScope?.(event.scopeId);
-  for (const identity of event.affectedIdentities) {
+  // WhatsApp names the admin who added people, and leaves recipients empty. The pending list is who actually asked to join.
+  const identities = request ? await membershipRequestIdentities(context, event) : event.affectedIdentities;
+  for (const identity of identities) {
     if (bots.has(identity.identityId)) continue;
     if (arrival) recordJoin(db, event.scopeId, identity.identityId, now);
     const recorded = standing?.find(member => member.identityId === identity.identityId);
