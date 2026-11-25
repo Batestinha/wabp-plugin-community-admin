@@ -94,6 +94,7 @@ export const moderationMessages: MessageCatalog = {
   [`${ns}.report.unknown`]: 'There is no open report #{id}.',
   [`${ns}.report.resolved`]: 'Report #{id}: {action} done.{dry}',
   [`${ns}.report.dismissed`]: 'Report #{id} dismissed.',
+  [`${ns}.report.dismissDryRun`]: 'Dry run. Report #{id} remains open.',
 
   [`${ns}.violation.warn`]: '{member}, please keep to the group rules ({rule}).',
   [`${ns}.rule.invite-link`]: 'no group invite links',
