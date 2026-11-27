@@ -29,6 +29,7 @@ const integrations = [
 ];
 
 export const moderationManifest: PluginManifest & { integrations: typeof integrations } = {
+  ...{ operationCatalogVersion: require('../wa-plugin.json').operationCatalogVersion, operationPermissions: require('../wa-plugin.json').operationPermissions },
   pluginId: MODERATION_PLUGIN_ID,
   name: 'Group Administration Assistant',
   author: { name: 'Batestinha', url: 'https://github.com/Batestinha' },
