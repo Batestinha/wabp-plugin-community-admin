@@ -8,7 +8,7 @@
   },
   "description": "Manages group membership, join requests, settings and subgroups. Administrators with the appropriate role can moderate messages, review reports, warn members, and suspend or expel them.",
   "kind": "managed_group",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "coreApiRange": "^0.3.29",
   "entrypoint": "dist/index.js",
   "messageNamespace": "official.community-admin",
@@ -533,6 +533,18 @@
     ]
   },
   "dependencies": [],
+  "integrations": [
+    {
+      "pluginId": "official.community-events",
+      "versionRange": ">=0.24.0",
+      "description": "Checks whether an event owns a subgroup before allowing members to change its title."
+    },
+    {
+      "pluginId": "official.nl-assistant",
+      "versionRange": "*",
+      "description": "Makes eligible group administrative actions available through the assistant."
+    }
+  ],
   "assistant": {
     "summary": "Moderates the groups of a scope (a community or standalone groups): suspensions and expulsions, member reports, a spam and raid shield, and etiquette rules.",
     "useCases": [

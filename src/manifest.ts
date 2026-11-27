@@ -21,7 +21,12 @@ import { communitySubgroupsMessages } from './subgroups/messages';
 const grants = ['moderate', 'group-info', 'group-settings', 'structure', 'send'].map(name => 'plugin.community-admin.' + name);
 const commands = [...new Set([...MODERATION_COMMANDS, ...doasManifest.commands, ...communitySubgroupsManifest.commands])];
 
-export const moderationManifest: PluginManifest = {
+const integrations = [
+  { pluginId: 'official.community-events', versionRange: '>=0.24.0', description: 'Checks whether an event owns a subgroup before allowing members to change its title.' },
+  { pluginId: 'official.nl-assistant', versionRange: '*', description: 'Makes eligible group administrative actions available through the assistant.' },
+];
+
+export const moderationManifest: PluginManifest & { integrations: typeof integrations } = {
   pluginId: MODERATION_PLUGIN_ID,
   name: 'Group Administration Assistant',
   author: { name: 'Batestinha', url: 'https://github.com/Batestinha' },
@@ -81,6 +86,7 @@ export const moderationManifest: PluginManifest = {
   databases: [{ name: MODERATION_DATABASE, engine: 'sqlite', scope: 'account', migrations: 'migrations/moderation' }],
   dataVersion: '1',
   dependencies: [],
+  integrations,
   cancellation: communitySubgroupsManifest.cancellation,
   services: communitySubgroupsManifest.services,
   assistant: {
