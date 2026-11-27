@@ -1,4 +1,8 @@
 {
+  "official.community-admin.rules.title": "Regras do grupo",
+  "official.community-admin.rules.empty": "Ainda não há regras publicadas aqui.",
+  "official.community-admin.rules.help": "Lê as regras desta comunidade ou grupo.",
+  "official.community-admin.rules.example": "/rules",
   "official.community-admin.description": "Gere membros, pedidos de adesão, definições e subgrupos. Os administradores com a função adequada podem moderar mensagens, analisar denúncias, advertir membros, suspendê-los ou expulsá-los.",
   "official.community-admin.help.family": "Assistente de administração de grupos",
   "official.community-admin.help.feature.title": "Assistente de administração de grupos",

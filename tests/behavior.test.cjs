@@ -194,7 +194,13 @@ test('lift ends an expulsion on request and extend moves the end date', async ()
 });
 
 test('invite-link spam from a new member is deleted and expels them; from an old member it is deleted and warned', async () => {
-  const h = community({ shield: { inviteLinkPolicy: 'expel-new-members' } });
+  const h = community({ shield: { inviteLinkPolicy: 'expel-new-members' },
+    rulebook: [{ id: 'invites', text: 'Ask before sharing invites.', checks: ['invite-link'] },
+      { id: 'kind', text: 'Be kind.', checks: [] }] });
+  const service = plugin.registerServices(h.context).find(s => s.serviceId.endsWith('.rules.v1'));
+  const published = await service.methods[0].handler({}, { scopeId: 'scope-1' });
+  assert.equal(published.text, 'Ask before sharing invites.\n\nBe kind.');
+  assert.match(published.revision, /^[a-f0-9]{64}$/);
   const hooks = plugin.registerHooks(h.context);
   const message = (who, id) => ({
     pluginId: 'official.community-admin', scopeId: 'scope-1', groupWid: 'main@g.us', managementMode: 'MANAGE', receivedAt: new Date('2026-11-21T12:00:00Z'),
@@ -204,6 +210,7 @@ test('invite-link spam from a new member is deleted and expels them; from an old
   await hooks.onParticipantChange({ pluginId: 'official.community-admin', scopeId: 'scope-1', groupWid: 'main@g.us', managementMode: 'MANAGE',
     receivedAt: new Date('2026-11-21T11:00:00Z'), occurredAt: new Date('2026-11-21T11:00:00Z'), eventId: 'j', chatId: 'main@g.us', action: 'join', botIdentityIds: [], affectedIdentities: [rui] });
   const fresh = await hooks.onMessage(message(rui, 'm1'));
+  assert.deepEqual(fresh.find(action => action.action === 'moderation.violation.detected').metadataJson.ruleIds, ['invites']);
   assert.ok(fresh.some(action => action.type === 'message.delete'));
   assert.ok(fresh.some(action => action.type === 'member.setStanding' && action.standing === 'expelled'));
   const old = await hooks.onMessage(message(person('Old', '351910000009'), 'm2'));
@@ -277,7 +284,7 @@ test('Community Admin and Group Admin expose the intended grants and every route
   const [group, communityRole] = plugin.manifest.roles;
   assert.deepEqual(group.permissions, ['plugin.community-admin.moderate','plugin.community-admin.group-info']);
   assert.deepEqual(communityRole.permissions, plugin.manifest.requiredPermissions);
-  assert.deepEqual(plugin.registerServices(context).map(service => service.serviceId), ['official.community-subgroups.v1']);
+  assert.deepEqual(plugin.registerServices(context).map(service => service.serviceId), ['official.community-subgroups.v1', 'official.community-admin.rules.v1']);
   assert.deepEqual(plugin.registerAssistantTools(context).map(tool => tool.descriptor.name), [
     'official.community-admin.participants.preview','official.community-admin.participants.execute','official.community-admin.group.execute']);
 });

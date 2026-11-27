@@ -91,11 +91,13 @@ export async function handleMessage(context: HookContext, event: PluginMessageEv
   let deleted = false;
   let expelled = false;
   for (const violation of violations) {
+    const matched = config.rulebook?.filter(rule => rule.checks.includes(violation.source)) ?? [];
+    const wording = matched.map(rule => rule.text).join('\n') || t(`${ns}.rule.${violation.source}`);
     actions.push({
       type: 'audit.record',
       action: 'moderation.violation.detected',
       targetJson: { scopeId: event.scopeId, identityId: member.identityId, messageId: event.message.id, groupWid: event.groupWid },
-      metadataJson: { source: violation.source, detail: violation.detail, policy: violation.policy, dryRun: config.dryRun, mode }
+      metadataJson: { ruleIds: matched.map(rule => rule.id), source: violation.source, detail: violation.detail, policy: violation.policy, dryRun: config.dryRun, mode }
     });
     if (config.dryRun || violation.policy === 'audit' || violation.policy === 'off' || mode === 'OBSERVE') continue;
 
@@ -106,11 +108,11 @@ export async function handleMessage(context: HookContext, event: PluginMessageEv
       expelled = true;
       const plan = await planCase(context, {
         db, config, scopeId: event.scopeId, scopeLabel: await scopeName(context, event.scopeId), member,
-        kind: 'expulsion', reason: t(`${ns}.rule.${violation.source}`), automatic: true, t
+        kind: 'expulsion', reason: wording, automatic: true, t
       });
       actions.push(...plan.actions);
       actions.push(...alertActions(await adminRecipients(context, config, event.scopeId, event.groupWid), t(`${ns}.alert.autoExpel`, {
-        member: member.label, rule: t(`${ns}.rule.${violation.source}`), group: event.groupWid, dry: ''
+        member: member.label, rule: wording, group: event.groupWid, dry: ''
       })));
       continue;
     }
@@ -121,10 +123,10 @@ export async function handleMessage(context: HookContext, event: PluginMessageEv
       deleted = true;
     }
     if (wantsWarn || (wantsDelete && mode !== 'MANAGE')) {
-      actions.push(...warnActions(db, config, t, event.scopeId, event.groupWid, member, violation, now));
+      actions.push(...warnActions(t, event.groupWid, member, wording));
       const count = addWarning(db, {
         scopeId: event.scopeId, identityId: member.identityId, source: violation.source,
-        reason: t(`${ns}.rule.${violation.source}`), now, ttlDays: config.warnings.ttlDays
+        reason: wording, now, ttlDays: config.warnings.ttlDays
       });
       if (count === config.warnings.alertAt) {
         actions.push(...alertActions(await adminRecipients(context, config, event.scopeId, event.groupWid),
@@ -142,13 +144,13 @@ function effectivePolicy(policy: RulePolicy, newMember: boolean): RulePolicy {
 }
 
 function warnActions(
-  _db: unknown, _config: ModerationConfig, t: TranslateFn, _scopeId: string, groupWid: string, member: Member, violation: Violation, _now: Date
+  t: TranslateFn, groupWid: string, member: Member, wording: string
 ): PluginAction[] {
   const mention = `@${member.mentionWid.split('@')[0]}`;
   return [{
     type: 'message.sendText',
     chatId: groupWid,
-    text: t(`${ns}.violation.warn`, { member: mention, rule: t(`${ns}.rule.${violation.source}`) }), ...withMessageSlot(`${ns}.violation.warn`),
+    text: t(`${ns}.violation.warn`, { member: mention, rule: wording }), ...withMessageSlot(`${ns}.violation.warn`),
     mentionedWids: [member.mentionWid]
   }];
 }

@@ -5,6 +5,7 @@ import type { CommandMetadata, CommandTargetSpec } from '@wabs/plugin-sdk/comman
 import type { CommandContext, CommandResult } from '@wabs/plugin-sdk/commands';
 import type { ManagedGroupCommandContext } from '@wabs/plugin-sdk/managed-group-plugin';
 import type { PluginDatabase } from '@wabs/plugin-sdk/database';
+import { publicRules } from './rulebook';
 import type { ModerationConfig } from './config';
 import {
   DAY_MS,
@@ -166,6 +167,18 @@ function dry(ctx: CommandContext, config: ModerationConfig): string {
 export function registerModerationCommands(context: ManagedGroupCommandContext): void {
   const deps = context as unknown as Deps;
   const router = context.router;
+  router.register('rules', '*', {
+    plane: 'group_operation', interaction: 'either_same_chat', pluginId: MODERATION_PLUGIN_ID,
+    requiresManagedGroup: true, requiresCurrentManagedGroupMembership: true, currentManagedGroupMembershipMode: 'effective_scope',
+    privateManagedTarget: { mode: 'infer_group_or_community', explicitTargetName: 'chat', collapseCommunities: true },
+    targets: [CHAT_FLAG_TARGET, SCOPE_TARGET], mutation: 'none', auditAction: 'community-admin.rules',
+    help: { familyKey: ns + '.help.family', featureId: 'community-admin', topicId: 'group-rules', descriptionKey: ns + '.rules.help', usage: '/rules' }
+  }, async ctx => {
+    const scope = scopeOf(ctx);
+    const config = scope && await configFor(deps, scope);
+    const text = config && config.enabled && publicRules(config).text;
+    return reply(text ? ctx.t(ns + '.rules.title') + '\n' + text : ctx.t(ns + '.rules.empty'));
+  });
 
   router.register('admin', 'status', modCommand('status', 'none'), async (ctx) => {
     const prepared = await prepare(deps, ctx);
@@ -350,7 +363,10 @@ export function registerModerationCommands(context: ManagedGroupCommandContext):
     });
     return reply(violations.length === 0
       ? ctx.t(`${ns}.test.none`)
-      : ctx.t(`${ns}.test.hit`, { rules: violations.map((violation) => `${ctx.t(`${ns}.rule.${violation.source}`)} (${violation.policy})`).join(', ') }));
+      : ctx.t(`${ns}.test.hit`, { rules: violations.map(violation => {
+        const wording = prepared.config.rulebook?.filter(rule => rule.checks.includes(violation.source)).map(rule => rule.text).join('\n');
+        return `${wording || ctx.t(`${ns}.rule.${violation.source}`)} (${violation.policy})`;
+      }).join(', ') }));
   });
 
   router.register('admin', 'resolve', modCommand('resolve', 'durable'), async (ctx) => {

@@ -1,3 +1,4 @@
+import { moderationChecks } from './rulebook';
 import { moderationConfigPaths } from './config';
 import { MODERATION_PLUGIN_ID } from './constants';
 
@@ -340,6 +341,13 @@ const groupCreationControls: ModerationControl[] = [
 ];
 
 export const moderationControls: ModerationControl[] = [
+  text('Group rules', 'legacyRulesForReview', 'Previous onboarding wording', 'Review any previous wording that differed when the rules moved here.', 4000),
+  control('Group rules', 'rulebook', 'Published group rules', 'Members see these rules in order. Use a stable ID for each rule. Moderators review rules without an automatic check.', {
+    type: 'array', items: { type: 'object', properties: {
+      id: { type: 'string', required: true }, text: { type: 'string', required: true, max: 4000 },
+      checks: { type: 'array', items: { type: 'enum', enum: moderationChecks.map(value => ({ value, label: value })) } }
+    } }
+  }, 'json'),
   toggle(GENERAL, 'enabled', 'Enabled', 'Enable the assistant here. Assign Group Admin and Community Admin on the Access page.'),
   choice('Join approval', 'joinApproval.policy', 'Require approval in managed groups', 'Apply to existing and new standalone groups and community subgroups that members can join directly.',
     [{ value: 'leave', label: 'Keep existing settings' }, { value: 'require', label: 'Require approval' }]),

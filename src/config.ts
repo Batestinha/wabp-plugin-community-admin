@@ -1,3 +1,4 @@
+import { rulebookSchema } from './rulebook';
 import { z } from 'zod';
 import { communitySubgroupCreationPolicySchema } from './subgroups/creationPolicy';
 
@@ -10,6 +11,8 @@ const chatIds = z.array(z.string().trim().min(1)).default([]);
 const clock = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/u, 'use HH:MM');
 
 export const moderationConfigSchema = z.object({
+  rulebook: rulebookSchema.optional(),
+  legacyRulesForReview: z.string().max(4000).optional(),
   enabled: z.boolean().default(false),
   requireConfirmForHighRisk: z.boolean().default(true),
   fanout: z.object({
@@ -85,7 +88,7 @@ export const moderationConfigSchema = z.object({
       policy: rulePolicySchema.default('warn')
     }).strict().default({})
   }).strict().default({})
-}).strict();
+}).strict().transform(config => ({ ...config, rulebook: config.rulebook, legacyRulesForReview: config.legacyRulesForReview }));
 
 export type ModerationConfig = z.infer<typeof moderationConfigSchema>;
 export type RulePolicy = z.infer<typeof spamPolicySchema>;
