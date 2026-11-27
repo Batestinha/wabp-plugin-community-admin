@@ -33,6 +33,7 @@ const metadata = {
   dataVersion: m.dataVersion,
   cancellation: m.cancellation,
   dependencies: m.dependencies,
+  integrations: m.integrations,
   assistant: m.assistant,
   externalActions: [],
   consoleOperations: [],
