@@ -1,5 +1,6 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
+  "memberSubscriptions": [],
   "pluginId": "official.community-admin",
   "name": "Group Administration Assistant",
   "author": {
@@ -8,8 +9,8 @@
   },
   "description": "Manages group membership, join requests, settings and subgroups. Administrators with the appropriate role can moderate messages, review reports, warn members, and suspend or expel them.",
   "kind": "managed_group",
-  "version": "1.0.8",
-  "coreApiRange": "^0.3.31",
+  "version": "1.1.0",
+  "coreApiRange": "^0.3.32",
   "entrypoint": "dist/index.js",
   "messageNamespace": "official.community-admin",
   "descriptionKey": "official.community-admin.description",
@@ -28,6 +29,7 @@
     "/admin test",
     "/admin resolve",
     "/report",
+    "/rules",
     "/admin delete",
     "/admin pin",
     "/admin unpin",
@@ -85,6 +87,27 @@
       "denunciar"
     ],
     "topics": [
+      {
+        "topicId": "group-rules",
+        "titleKey": "official.community-admin.rules.title",
+        "summaryKey": "official.community-admin.rules.help",
+        "order": 10,
+        "commands": [
+          "/rules"
+        ],
+        "exampleKeys": [
+          "official.community-admin.rules.example"
+        ],
+        "keywords": [
+          "rules",
+          "regras"
+        ],
+        "availability": {
+          "invocation": "either",
+          "requiresCurrentManagedGroupMembership": true,
+          "currentManagedGroupMembershipMode": "effective_scope"
+        }
+      },
       {
         "topicId": "messages",
         "titleKey": "official.community-admin.actions.help.topic.messages.title",
@@ -419,6 +442,15 @@
           "timeoutMs": 120000
         }
       ]
+    },
+    {
+      "serviceId": "official.community-admin.rules.v1",
+      "methods": [
+        {
+          "name": "getPublished",
+          "access": "read"
+        }
+      ]
     }
   ],
   "eventSubscriptions": [
@@ -565,6 +597,13 @@
     ],
     "workflows": [
       {
+        "intent": "community_rules",
+        "description": "Show the published rules for the current scope.",
+        "commands": [
+          "/rules"
+        ]
+      },
+      {
         "intent": "moderation_case",
         "description": "Suspend, expel, lift or extend.",
         "commands": [
@@ -652,9 +691,99 @@
       "etiquette.quietHours.end",
       "etiquette.quietHours.timezone",
       "etiquette.quietHours.groupChatIds",
-      "etiquette.quietHours.policy"
+      "etiquette.quietHours.policy",
+      "rulebook",
+      "legacyRulesForReview"
     ],
     "controls": [
+      {
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.legacyRulesForReview",
+        "path": "legacyRulesForReview",
+        "label": "Previous onboarding wording",
+        "description": "Review any previous wording that differed when the rules moved here.",
+        "section": "Group rules",
+        "order": 10,
+        "schema": {
+          "type": "string",
+          "max": 4000
+        },
+        "ui": {
+          "widget": "text",
+          "multiline": true,
+          "helpText": "Review any previous wording that differed when the rules moved here."
+        }
+      },
+      {
+        "pluginId": "official.community-admin",
+        "id": "plugin.official.community-admin.rulebook",
+        "path": "rulebook",
+        "label": "Published group rules",
+        "description": "Members see these rules in order. Use a stable ID for each rule. Moderators review rules without an automatic check.",
+        "section": "Group rules",
+        "order": 20,
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "required": true
+              },
+              "text": {
+                "type": "string",
+                "required": true,
+                "max": 4000
+              },
+              "checks": {
+                "type": "array",
+                "items": {
+                  "type": "enum",
+                  "enum": [
+                    {
+                      "value": "invite-link",
+                      "label": "invite-link"
+                    },
+                    {
+                      "value": "link",
+                      "label": "link"
+                    },
+                    {
+                      "value": "phrase",
+                      "label": "phrase"
+                    },
+                    {
+                      "value": "flood",
+                      "label": "flood"
+                    },
+                    {
+                      "value": "sticker-burst",
+                      "label": "sticker-burst"
+                    },
+                    {
+                      "value": "forwarded",
+                      "label": "forwarded"
+                    },
+                    {
+                      "value": "media",
+                      "label": "media"
+                    },
+                    {
+                      "value": "quiet-hours",
+                      "label": "quiet-hours"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "ui": {
+          "widget": "json",
+          "helpText": "Members see these rules in order. Use a stable ID for each rule. Moderators review rules without an automatic check."
+        }
+      },
       {
         "pluginId": "official.community-admin",
         "id": "plugin.official.community-admin.enabled",
@@ -662,7 +791,7 @@
         "label": "Enabled",
         "description": "Enable the assistant here. Assign Group Admin and Community Admin on the Access page.",
         "section": "People and roles",
-        "order": 10,
+        "order": 30,
         "schema": {
           "type": "boolean"
         },
@@ -678,7 +807,7 @@
         "label": "Require approval in managed groups",
         "description": "Apply to existing and new standalone groups and community subgroups that members can join directly.",
         "section": "Join approval",
-        "order": 20,
+        "order": 40,
         "schema": {
           "type": "enum",
           "enum": [
@@ -704,7 +833,7 @@
         "label": "Automatically approve other members",
         "description": "Approve requests from members without a hold while no raid lock is active.",
         "section": "Join approval",
-        "order": 30,
+        "order": 50,
         "schema": {
           "type": "boolean"
         },
@@ -720,7 +849,7 @@
         "label": "Confirm high-risk actions",
         "description": "Require confirmation before high-risk admin actions.",
         "section": "Admin actions",
-        "order": 40,
+        "order": 60,
         "schema": {
           "type": "boolean"
         },
@@ -736,7 +865,7 @@
         "label": "Community-wide actions",
         "description": "Allow authorized actions in multiple managed groups.",
         "section": "Admin actions",
-        "order": 50,
+        "order": 70,
         "schema": {
           "type": "boolean"
         },
@@ -752,7 +881,7 @@
         "label": "Require an explicit fan-out flag",
         "description": "Require the command to select multiple groups explicitly.",
         "section": "Admin actions",
-        "order": 60,
+        "order": 80,
         "schema": {
           "type": "boolean"
         },
@@ -768,7 +897,7 @@
         "label": "Maximum groups per command",
         "description": "Limit community-wide actions to this many groups.",
         "section": "Admin actions",
-        "order": 70,
+        "order": 90,
         "schema": {
           "type": "number",
           "min": 1,
@@ -786,7 +915,7 @@
         "label": "Include the community parent",
         "description": "Include the parent in a community-wide action by default.",
         "section": "Admin actions",
-        "order": 80,
+        "order": 100,
         "schema": {
           "type": "boolean"
         },
@@ -1105,7 +1234,7 @@
         "label": "Dry run",
         "description": "Only record what would happen in the audit log; nothing is deleted, removed or sent.",
         "section": "People and roles",
-        "order": 90,
+        "order": 110,
         "schema": {
           "type": "boolean"
         },
@@ -1121,7 +1250,7 @@
         "label": "Exempt groups",
         "description": "Groups of this scope where moderation never acts.",
         "section": "People and roles",
-        "order": 100,
+        "order": 120,
         "schema": {
           "type": "array",
           "items": {
@@ -1140,7 +1269,7 @@
         "label": "Member reports",
         "description": "Let members report a message to the admins with /report.",
         "section": "People and roles",
-        "order": 110,
+        "order": 130,
         "schema": {
           "type": "boolean"
         },
@@ -1156,7 +1285,7 @@
         "label": "Warnings last",
         "description": "Days a warning stays active.",
         "section": "People and roles",
-        "order": 120,
+        "order": 140,
         "schema": {
           "type": "number",
           "min": 1,
@@ -1175,7 +1304,7 @@
         "label": "Alert admins at",
         "description": "Tell the admins when a member reaches this many active warnings.",
         "section": "People and roles",
-        "order": 130,
+        "order": 150,
         "schema": {
           "type": "number",
           "min": 1,
@@ -1193,7 +1322,7 @@
         "label": "Default suspension",
         "description": "Length of a suspension when the command gives none.",
         "section": "Suspensions and expulsions",
-        "order": 140,
+        "order": 160,
         "schema": {
           "type": "number",
           "min": 1,
@@ -1212,7 +1341,7 @@
         "label": "Longest suspension",
         "description": "Longest suspension an admin may give.",
         "section": "Suspensions and expulsions",
-        "order": 150,
+        "order": 170,
         "schema": {
           "type": "number",
           "min": 1,
@@ -1231,7 +1360,7 @@
         "label": "Suspension notice extra",
         "description": "Extra text added to the private message a suspended member receives, for example where to keep reading the group history.",
         "section": "Suspensions and expulsions",
-        "order": 160,
+        "order": 180,
         "schema": {
           "type": "string",
           "max": 1000
@@ -1249,7 +1378,7 @@
         "label": "Expulsion notice extra",
         "description": "Extra text added to the private message an expelled member receives.",
         "section": "Suspensions and expulsions",
-        "order": 170,
+        "order": 190,
         "schema": {
           "type": "string",
           "max": 1000
@@ -1267,7 +1396,7 @@
         "label": "New member period (hours)",
         "description": "Hours after joining during which spam can lead to automatic expulsion.",
         "section": "Spam and raid shield",
-        "order": 180,
+        "order": 200,
         "schema": {
           "type": "number",
           "min": 1,
@@ -1285,7 +1414,7 @@
         "label": "Group invite links",
         "description": "What to do with WhatsApp group or channel invite links.",
         "section": "Spam and raid shield",
-        "order": 190,
+        "order": 210,
         "schema": {
           "type": "enum",
           "enum": [
@@ -1327,7 +1456,7 @@
         "label": "Other links",
         "description": "What to do with links outside the allowed sites (or to the blocked sites, when listed).",
         "section": "Spam and raid shield",
-        "order": 200,
+        "order": 220,
         "schema": {
           "type": "enum",
           "enum": [
@@ -1365,7 +1494,7 @@
         "label": "Allowed sites",
         "description": "Sites whose links are always fine.",
         "section": "Spam and raid shield",
-        "order": 210,
+        "order": 230,
         "schema": {
           "type": "array",
           "items": {
@@ -1384,7 +1513,7 @@
         "label": "Blocked sites",
         "description": "When set, only links to these sites count as violations.",
         "section": "Spam and raid shield",
-        "order": 220,
+        "order": 240,
         "schema": {
           "type": "array",
           "items": {
@@ -1403,7 +1532,7 @@
         "label": "Banned phrases",
         "description": "Words or phrases that are not allowed.",
         "section": "Spam and raid shield",
-        "order": 230,
+        "order": 250,
         "schema": {
           "type": "array",
           "items": {
@@ -1422,7 +1551,7 @@
         "label": "Banned phrase action",
         "description": "What to do when a banned phrase appears.",
         "section": "Spam and raid shield",
-        "order": 240,
+        "order": 260,
         "schema": {
           "type": "enum",
           "enum": [
@@ -1460,7 +1589,7 @@
         "label": "Flood protection",
         "description": "Act when someone sends too many messages at once.",
         "section": "Spam and raid shield",
-        "order": 250,
+        "order": 270,
         "schema": {
           "type": "boolean"
         },
@@ -1476,7 +1605,7 @@
         "label": "Flood messages",
         "description": "Messages allowed within the flood window.",
         "section": "Spam and raid shield",
-        "order": 260,
+        "order": 280,
         "schema": {
           "type": "number",
           "min": 2,
@@ -1494,7 +1623,7 @@
         "label": "Flood window",
         "description": "Length of the flood window.",
         "section": "Spam and raid shield",
-        "order": 270,
+        "order": 290,
         "schema": {
           "type": "number",
           "min": 5,
@@ -1513,7 +1642,7 @@
         "label": "Flood action",
         "description": "What to do with a flood.",
         "section": "Spam and raid shield",
-        "order": 280,
+        "order": 300,
         "schema": {
           "type": "enum",
           "enum": [
@@ -1555,7 +1684,7 @@
         "label": "Raid protection",
         "description": "Lock a group briefly when many people join at once.",
         "section": "Spam and raid shield",
-        "order": 290,
+        "order": 310,
         "schema": {
           "type": "boolean"
         },
@@ -1571,7 +1700,7 @@
         "label": "Raid joins",
         "description": "Joins within the raid window that count as a raid.",
         "section": "Spam and raid shield",
-        "order": 300,
+        "order": 320,
         "schema": {
           "type": "number",
           "min": 2,
@@ -1589,7 +1718,7 @@
         "label": "Raid window",
         "description": "Length of the raid window.",
         "section": "Spam and raid shield",
-        "order": 310,
+        "order": 330,
         "schema": {
           "type": "number",
           "min": 10,
@@ -1608,7 +1737,7 @@
         "label": "Raid lock",
         "description": "How long the group stays admin-only after a raid.",
         "section": "Spam and raid shield",
-        "order": 320,
+        "order": 340,
         "schema": {
           "type": "number",
           "min": 1,
@@ -1627,7 +1756,7 @@
         "label": "Reset invite link on raid",
         "description": "Also reset the group invite link when a raid is detected.",
         "section": "Spam and raid shield",
-        "order": 330,
+        "order": 350,
         "schema": {
           "type": "boolean"
         },
@@ -1643,7 +1772,7 @@
         "label": "Sticker bursts",
         "description": "Act when someone sends many stickers in a row.",
         "section": "Group etiquette",
-        "order": 340,
+        "order": 360,
         "schema": {
           "type": "boolean"
         },
@@ -1659,7 +1788,7 @@
         "label": "Stickers allowed",
         "description": "Stickers allowed within the window.",
         "section": "Group etiquette",
-        "order": 350,
+        "order": 370,
         "schema": {
           "type": "number",
           "min": 1,
@@ -1677,7 +1806,7 @@
         "label": "Sticker window",
         "description": "Length of the sticker window.",
         "section": "Group etiquette",
-        "order": 360,
+        "order": 380,
         "schema": {
           "type": "number",
           "min": 5,
@@ -1696,7 +1825,7 @@
         "label": "Sticker burst action",
         "description": "What to do with a sticker burst.",
         "section": "Group etiquette",
-        "order": 370,
+        "order": 390,
         "schema": {
           "type": "enum",
           "enum": [
@@ -1734,7 +1863,7 @@
         "label": "Forwarded chains",
         "description": "Act on forwarded chain messages.",
         "section": "Group etiquette",
-        "order": 380,
+        "order": 400,
         "schema": {
           "type": "boolean"
         },
@@ -1750,7 +1879,7 @@
         "label": "Forwarded action",
         "description": "What to do with forwarded messages.",
         "section": "Group etiquette",
-        "order": 390,
+        "order": 410,
         "schema": {
           "type": "enum",
           "enum": [
@@ -1788,7 +1917,7 @@
         "label": "No-media groups",
         "description": "Groups where photos, videos and documents are not allowed.",
         "section": "Group etiquette",
-        "order": 400,
+        "order": 420,
         "schema": {
           "type": "array",
           "items": {
@@ -1807,7 +1936,7 @@
         "label": "Media action",
         "description": "What to do with media in a no-media group.",
         "section": "Group etiquette",
-        "order": 410,
+        "order": 430,
         "schema": {
           "type": "enum",
           "enum": [
@@ -1845,7 +1974,7 @@
         "label": "Quiet hours",
         "description": "Act on messages sent during quiet hours.",
         "section": "Group etiquette",
-        "order": 420,
+        "order": 440,
         "schema": {
           "type": "boolean"
         },
@@ -1861,7 +1990,7 @@
         "label": "Quiet from",
         "description": "Start of quiet hours (HH:MM).",
         "section": "Group etiquette",
-        "order": 430,
+        "order": 450,
         "schema": {
           "type": "string",
           "max": 5
@@ -1878,7 +2007,7 @@
         "label": "Quiet until",
         "description": "End of quiet hours (HH:MM).",
         "section": "Group etiquette",
-        "order": 440,
+        "order": 460,
         "schema": {
           "type": "string",
           "max": 5
@@ -1895,7 +2024,7 @@
         "label": "Quiet hours time zone",
         "description": "IANA time zone, for example Europe/Lisbon.",
         "section": "Group etiquette",
-        "order": 450,
+        "order": 470,
         "schema": {
           "type": "string",
           "max": 64
@@ -1912,7 +2041,7 @@
         "label": "Quiet hours groups",
         "description": "Groups with quiet hours; empty means every group here.",
         "section": "Group etiquette",
-        "order": 460,
+        "order": 480,
         "schema": {
           "type": "array",
           "items": {
@@ -1931,7 +2060,7 @@
         "label": "Quiet hours action",
         "description": "What to do with messages during quiet hours.",
         "section": "Group etiquette",
-        "order": 470,
+        "order": 490,
         "schema": {
           "type": "enum",
           "enum": [

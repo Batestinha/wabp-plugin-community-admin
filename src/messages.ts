@@ -2,6 +2,10 @@ import type { MessageCatalog } from '@wabs/plugin-sdk/i18n';
 import { MODERATION_NAMESPACE as ns } from './constants';
 
 export const moderationMessages: MessageCatalog = {
+  "official.community-admin.rules.title": "Group rules",
+  "official.community-admin.rules.empty": "No rules have been published here.",
+  "official.community-admin.rules.help": "Read the rules for this community or group.",
+  "official.community-admin.rules.example": "/rules",
   [`${ns}.description`]: 'Manages group membership, join requests, settings and subgroups. Administrators with the appropriate role can moderate messages, review reports, warn members, and suspend or expel them.',
   [`${ns}.help.family`]: 'Moderation',
   [`${ns}.help.feature.title`]: 'Moderation',

@@ -10,7 +10,7 @@ const metadata = require('../wa-plugin.json');
 
 test('wa-plugin.json matches the compiled manifest and declares its own title and author', () => {
   assert.equal(validatePluginManifest(plugin.manifest), plugin.manifest);
-  assert.equal(metadata.schemaVersion, 2);
+  assert.equal(metadata.schemaVersion, 3);
   assert.equal(pluginIdentityProblem(metadata.pluginId, { name: metadata.name, author: metadata.author }), undefined);
   for (const key of ['pluginId', 'name', 'author', 'version', 'coreApiRange', 'messageNamespace', 'commands', 'eventSubscriptions',
     'dangerousActions', 'backgroundJobs', 'databases', 'requiredPermissions']) {

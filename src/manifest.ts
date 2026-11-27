@@ -18,6 +18,8 @@ import { moderationMessages } from './messages';
 import { doasMessages } from './actions/messages';
 import { communitySubgroupsMessages } from './subgroups/messages';
 
+import { rulesService } from './rulebook';
+
 const grants = ['moderate', 'group-info', 'group-settings', 'structure', 'send'].map(name => 'plugin.community-admin.' + name);
 const commands = [...new Set([...MODERATION_COMMANDS, ...doasManifest.commands, ...communitySubgroupsManifest.commands])];
 
@@ -48,6 +50,9 @@ export const moderationManifest: PluginManifest & { integrations: typeof integra
     order: 80,
     aliases: ['Administração da comunidade', 'Assistente de Administração da Comunidade', 'Community Administration Assistant', 'Community Administration Manager', 'moderation', 'moderação', 'suspend', 'expel', 'report', 'denunciar'],
     topics: [
+      { topicId: 'group-rules', titleKey: ns + '.rules.title', summaryKey: ns + '.rules.help', order: 10,
+        commands: ['/rules'], exampleKeys: [ns + '.rules.example'], keywords: ['rules', 'regras'],
+        availability: { invocation: 'either', requiresCurrentManagedGroupMembership: true, currentManagedGroupMembershipMode: 'effective_scope' } },
       ...(doasManifest.help?.topics ?? []), ...(communitySubgroupsManifest.help?.topics ?? []),
       {
         topicId: 'moderate-members',
@@ -88,7 +93,8 @@ export const moderationManifest: PluginManifest & { integrations: typeof integra
   dependencies: [],
   integrations,
   cancellation: communitySubgroupsManifest.cancellation,
-  services: communitySubgroupsManifest.services,
+  memberSubscriptions: [],
+  services: [...(communitySubgroupsManifest.services ?? []), rulesService],
   assistant: {
     summary: 'Moderates the groups of a scope (a community or standalone groups): suspensions and expulsions, member reports, a spam and raid shield, and etiquette rules.',
     useCases: [
@@ -108,6 +114,7 @@ export const moderationManifest: PluginManifest & { integrations: typeof integra
       'dryRun=true (the default) only records decisions in the audit log.'
     ],
     workflows: [
+      { intent: 'community_rules', description: 'Show the published rules for the current scope.', commands: ['/rules'] },
       { intent: 'moderation_case', description: 'Suspend, expel, lift or extend.', commands: ['/admin suspend', '/admin expel', '/admin lift', '/admin extend'] },
       { intent: 'moderation_report', description: 'Report a message, or act on a report.', commands: ['/report', '/admin resolve'] },
       { intent: 'moderation_status', description: 'Show settings, cases and warnings.', commands: ['/admin status', '/admin cases', '/admin warnings'] }
