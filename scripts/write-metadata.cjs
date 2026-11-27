@@ -27,6 +27,8 @@ const metadata = {
   services: m.services,
   eventSubscriptions: m.eventSubscriptions,
   requiredPermissions: m.requiredPermissions,
+  operationCatalogVersion: m.operationCatalogVersion,
+  operationPermissions: m.operationPermissions,
   requiredBotCapabilities: m.requiredBotCapabilities,
   dangerousActions: m.dangerousActions,
   backgroundJobs: m.backgroundJobs,

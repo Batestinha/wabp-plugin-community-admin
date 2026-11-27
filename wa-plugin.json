@@ -9,7 +9,7 @@
   },
   "description": "Manages group membership, join requests, settings and subgroups. Administrators with the appropriate role can moderate messages, review reports, warn members, and suspend or expel them.",
   "kind": "managed_group",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "coreApiRange": "^0.3.34",
   "entrypoint": "dist/index.js",
   "messageNamespace": "official.community-admin",

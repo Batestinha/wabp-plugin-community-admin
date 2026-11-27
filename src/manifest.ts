@@ -28,8 +28,59 @@ const integrations = [
   { pluginId: 'official.nl-assistant', versionRange: '*', description: 'Makes eligible group administrative actions available through the assistant.' },
 ];
 
-export const moderationManifest: PluginManifest & { integrations: typeof integrations } = {
-  ...{ operationCatalogVersion: require('../wa-plugin.json').operationCatalogVersion, operationPermissions: require('../wa-plugin.json').operationPermissions },
+const operationMetadata = {
+  operationCatalogVersion: 1 as const,
+  operationPermissions: [
+    {
+      id: "official.community-admin.moderate",
+      action: "plugin.community-admin.moderate",
+      title: "Moderate members",
+      description: "Apply and manage moderation decisions.",
+      titleKey: "official.community-admin.actions.help.topic.messages.title",
+      descriptionKey: "official.community-admin.actions.help.topic.messages.summary",
+      defaultAccess: "explicit" as const,
+    },
+    {
+      id: "official.community-admin.read-group",
+      action: "plugin.community-admin.group-info",
+      title: "Read group administration information",
+      description: "Inspect group administration and membership details.",
+      titleKey: "official.community-admin.actions.help.topic.members.title",
+      descriptionKey: "official.community-admin.actions.help.topic.members.summary",
+      defaultAccess: "explicit" as const,
+    },
+    {
+      id: "official.community-admin.edit-settings",
+      action: "plugin.community-admin.group-settings",
+      title: "Change group settings",
+      description: "Change group information, access and retention settings.",
+      titleKey: "official.community-admin.actions.help.topic.settings.title",
+      descriptionKey: "official.community-admin.actions.help.topic.settings.summary",
+      defaultAccess: "explicit" as const,
+    },
+    {
+      id: "official.community-admin.change-structure",
+      action: "plugin.community-admin.structure",
+      title: "Manage group structure",
+      description: "Create, link and administer groups and communities.",
+      titleKey: "official.community-admin.actions.help.topic.communities.title",
+      descriptionKey: "official.community-admin.actions.help.topic.communities.summary",
+      defaultAccess: "explicit" as const,
+    },
+    {
+      id: "official.community-admin.send",
+      action: "plugin.community-admin.send",
+      title: "Send messages as the bot",
+      description: "Send authorized messages and attachments through the bot.",
+      titleKey: "official.community-admin.actions.help.topic.messages.title",
+      descriptionKey: "official.community-admin.actions.help.topic.messages.summary",
+      defaultAccess: "explicit" as const,
+    },
+  ]
+};
+
+export const moderationManifest: PluginManifest & { integrations: typeof integrations } & typeof operationMetadata = {
+  ...operationMetadata,
   pluginId: MODERATION_PLUGIN_ID,
   name: 'Group Administration Assistant',
   author: { name: 'Batestinha', url: 'https://github.com/Batestinha' },
